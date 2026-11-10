@@ -35,6 +35,8 @@ node e2e/campaign.mjs           # mapa, migração e M02 móvel
 
 O robô apenas escolhe comandos de movimento, especial e bomba. Usa `?debug=qa` para avançar a mesma simulação fixa rapidamente, com colisões, dano e resgates normais. Não usa invulnerabilidade, não altera HP e **não ganha recompensas de perfil**. O relatório deixa explícito que o teste é acelerado, não uma partida humana em tempo real.
 
+Para depuração local, `?debug=boss&stage=M02` entra diretamente na Serpente; `?debug=qa&stage=M02` inicia o roteiro completo. Sem `debug`, M02 sempre exige o desbloqueio normal.
+
 ## Campanha
 
 Abra **CAMPANHA** no menu. M01 está disponível desde o início; vencer no Normal libera M02, sem exigir medalhas extras. Saves v0.1/v0.2 com M01 concluída abrem M02 automaticamente. Cada missão mantém seu próprio recorde e medalhas; sucata e melhorias são compartilhadas. M03–M05 aparecem bloqueadas como **Em produção**. Após M01, o relatório oferece **Próxima missão**.

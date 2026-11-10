@@ -1,0 +1,245 @@
+import { mkdirSync } from "node:fs";
+mkdirSync("release/screenshots/v0.3", { recursive: true });
+import { chromium } from "playwright";
+import { writeFileSync } from "node:fs";
+import assert from "node:assert/strict";
+const browser = await chromium.launch({
+  headless: true,
+  args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
+});
+const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+const errors = [];
+page.on("pageerror", (e) => errors.push(e.message));
+page.on("console", (m) => {
+  if (m.type() === "error") errors.push(m.text());
+});
+await page.goto("http://localhost:4176/?debug=qa&stage=M02");
+await page.getByRole("button", { name: /INICIAR MISSÃO/ }).click();
+await page.getByRole("button", { name: "INICIAR VOO ↗" }).click();
+const pilot = async (stop = 9999) =>
+  page.evaluate((stop) => {
+    const qa = window.__AURORA__;
+    let steps = 0,
+      lastTarget = 0,
+      seen = new Set(),
+      seenEnemies = new Set(),
+      repairSeen = false,
+      minHP = 100;
+    const metrics = (window.pilotMetrics ||= {
+      seen: [],
+      enemies: [],
+      minHP: 100,
+      repairSeen: false,
+      phaseStart: 345,
+      lastPhase: 0,
+    });
+    seen = new Set(metrics.seen);
+    seenEnemies = new Set(metrics.enemies);
+    minHP = metrics.minHP;
+    repairSeen = metrics.repairSeen;
+    metrics.totalSteps ||= 0;
+    const patterns = new Set(metrics.patterns || []);
+    while (steps++ < 16000) {
+      const s = qa.state(),
+        p = s.player;
+      for (const e of s.enemies) seenEnemies.add(e.kind);
+      if (
+        s.bullets.some(
+          (b) => b.source.includes("Serpente") && b.style === "mine",
+        )
+      )
+        patterns.add("minas");
+      if (
+        s.lasers.some(
+          (l) => l.source.includes("jato elétrico") && l.age > l.warn + 0.15,
+        )
+      )
+        patterns.add("jato elétrico ativo");
+      if (s.boss?.cars.some((c) => c.hp > 0 && c.dash > 0 && c.dash < 2.8))
+        patterns.add("corrida ativa");
+      if (s.pickups.some((p) => p.kind === "repair")) repairSeen = true;
+      if (s.time >= stop || (s.state !== "playing" && s.state !== "dying"))
+        break;
+      let tx = 6.7,
+        ty = -8;
+      const r = s.rescues.find((r) => r.active);
+      if (r) {
+        tx = r.x;
+        ty = Math.max(-10, Math.min(6.5, r.y));
+      } else if (p.hp < 90 && s.pickups.some((p) => p.kind === "repair")) {
+        const kit = s.pickups.find((p) => p.kind === "repair");
+        tx = kit.x;
+        ty = Math.min(6.5, kit.y);
+      } else if (s.convoys.some((c) => c.active && c.hp > 0 && c.y > p.y + 1)) {
+        const c = s.convoys.find((c) => c.active && c.hp > 0 && c.y > p.y + 1);
+        tx = c.x;
+        ty = -8;
+      } else if (s.boss) {
+        seen.add(s.boss.phase);
+        if (s.boss.phase !== metrics.lastPhase) {
+          metrics.phaseStart = s.time;
+          metrics.lastPhase = s.boss.phase;
+        }
+        const wait =
+          s.boss.phase === 1
+            ? s.boss.age < 8.5
+            : s.time - metrics.phaseStart < (s.boss.phase === 2 ? 7 : 6);
+        const car =
+          s.boss.cars.slice(1).find((c) => c.hp > 0) || s.boss.cars[0];
+        tx = wait ? 6.7 : car.x;
+        ty = -8;
+        metrics.wait = wait;
+      }
+      const dx = tx - p.x,
+        dy = ty - p.y,
+        len = Math.hypot(dx, dy) || 1;
+      const dirs = [
+        [dx / len, dy / len],
+        [0, 0],
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+        [0.707, 0.707],
+        [-0.707, 0.707],
+        [0.707, -0.707],
+        [-0.707, -0.707],
+      ];
+      let best = dirs[0],
+        bestCost = 1e9;
+      for (const d of dirs) {
+        let cost = 0,
+          px = p.x,
+          py = p.y,
+          vx = p.vx,
+          vy = p.vy;
+        for (let ti = 1; ti <= 30; ti++) {
+          const dt = 1 / 60,
+            t = ti * dt;
+          const approach = (v, t, a) => v + Math.max(-a, Math.min(a, t - v));
+          vx = approach(vx, d[0] * 8.2, (d[0] ? 35 : 40) * dt);
+          vy = approach(vy, d[1] * 8.2, (d[1] ? 35 : 40) * dt);
+          px = Math.max(-6.87, Math.min(6.87, px + vx * dt));
+          py = Math.max(-11.67, Math.min(6.67, py + vy * dt));
+          cost += Math.hypot(px - tx, py - ty) * 0.035;
+          for (const b of s.bullets) {
+            const dist = Math.hypot(b.x + b.vx * t - px, b.y + b.vy * t - py);
+            if (dist < 1) cost += (1 - dist) * 80;
+          }
+          for (const e of s.enemies) {
+            const speed = { E01: 2.4, E03: 2.7, E08: 1.4 }[e.kind] || 1.1;
+            const dist = Math.hypot(e.x - px, e.y - speed * t - py);
+            if (dist < e.r + 0.65) cost += (e.r + 0.65 - dist) * 80;
+          }
+          for (const l of s.lasers) {
+            if (
+              l.duration > 0 &&
+              l.age + t > l.warn &&
+              l.age + t < l.warn + 0.15 + l.duration
+            ) {
+              const ax = l.x,
+                ay = l.y,
+                dx = l.tx - ax,
+                dy = l.ty - ay;
+              const u = Math.max(
+                0,
+                Math.min(
+                  1,
+                  ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy),
+                ),
+              );
+              const dist = Math.hypot(px - ax - u * dx, py - ay - u * dy);
+              if (dist < l.width / 2 + 0.75)
+                cost += (l.width / 2 + 0.75 - dist) * 100;
+            }
+          }
+        }
+        if (cost < bestCost) {
+          bestCost = cost;
+          best = d;
+        }
+      }
+      const bomb =
+        p.hp <= 45 &&
+        s.bullets.some((b) => Math.hypot(b.x - p.x, b.y - p.y) < 4) &&
+        p.bombs > 0;
+      const special =
+        !!s.boss &&
+        !metrics.wait &&
+        s.boss.invul === 0 &&
+        Math.abs(p.x - tx) < 0.7 &&
+        p.specials > 0 &&
+        p.beam === 0;
+      qa.step(3, { x: best[0], y: best[1], bomb, special });
+      metrics.totalSteps++;
+      minHP = Math.min(minHP, p.hp);
+    }
+    Object.assign(metrics, {
+      seen: [...seen],
+      enemies: [...seenEnemies],
+      minHP,
+      repairSeen,
+      patterns: [...patterns],
+    });
+    return {
+      steps: metrics.totalSteps,
+      patterns: [...patterns],
+      minHP,
+      phases: [...seen],
+      enemies: [...seenEnemies],
+      repairSeen,
+      state: qa.state(),
+    };
+  }, stop);
+await pilot(145);
+await page.screenshot({ path: "release/screenshots/v0.3/02-m02-gameplay.png" });
+await pilot(352);
+await page.screenshot({ path: "release/screenshots/v0.3/03-serpente.png" });
+const result = await pilot();
+assert.equal(result.state.state, "victory");
+assert.equal(
+  result.state.boss.cars.every((c) => c.hp === 0),
+  true,
+);
+assert.equal(result.state.ammoDestroyed, 2);
+assert.equal(result.state.rescues.filter((r) => r.rescued).length, 3);
+assert.deepEqual(result.phases, [1, 2, 3]);
+assert.deepEqual(result.patterns, [
+  "minas",
+  "jato elétrico ativo",
+  "corrida ativa",
+]);
+assert.deepEqual(result.enemies.sort(), ["E01", "E03", "E05", "E07", "E08"]);
+assert.equal(result.repairSeen, true);
+assert.deepEqual(errors, []);
+writeFileSync(
+  "release/full-m02-qa-v03.json",
+  JSON.stringify(
+    {
+      mode: "Accelerated fixed-step, real inputs, damage enabled, no profile rewards",
+      errors,
+      ...result,
+    },
+    null,
+    2,
+  ),
+);
+console.log(
+  JSON.stringify(
+    {
+      errors,
+      time: result.state.time,
+      phases: result.phases,
+      hp: result.state.player.hp,
+      rescued: result.state.rescues.filter((r) => r.rescued).length,
+      cars: result.state.boss.cars.map((c) => c.hp),
+      ammoDestroyed: result.state.ammoDestroyed,
+      state: result.state.state,
+    },
+    null,
+    2,
+  ),
+);
+await page.waitForTimeout(500);
+await page.screenshot({ path: "release/screenshots/v0.3/04-m02-result.png" });
+await browser.close();

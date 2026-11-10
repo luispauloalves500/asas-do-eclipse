@@ -1,0 +1,133 @@
+{
+  "mode": "Accelerated fixed-step, real inputs, damage enabled, no profile rewards",
+  "errors": [],
+  "steps": 7240,
+  "minHP": 100,
+  "phases": [
+    1,
+    2,
+    3
+  ],
+  "enemies": [
+    "E01",
+    "E02",
+    "E05",
+    "E06"
+  ],
+  "repairSeen": true,
+  "state": {
+    "screen": "game",
+    "selectedStage": "M01",
+    "stageId": "M01",
+    "ammoDestroyed": 0,
+    "convoys": [],
+    "paused": true,
+    "state": "victory",
+    "time": 358.80000000000234,
+    "player": {
+      "id": 0,
+      "x": 0.18598607129287162,
+      "y": -5.008580564848525,
+      "px": 0.06931940462620496,
+      "py": -5.037747231515191,
+      "vx": 6.999999999999999,
+      "vy": 1.75,
+      "r": 0.33,
+      "hp": 100,
+      "maxHp": 100,
+      "invul": 999,
+      "fire": 0.033333333333393084,
+      "bombs": 2,
+      "specials": 0,
+      "beam": 1.0166666666666673
+    },
+    "boss": {
+      "x": 0,
+      "y": 6.5,
+      "py": 6.5,
+      "hp": 0,
+      "left": 0,
+      "right": 0,
+      "phase": 3,
+      "invul": 0,
+      "age": 18.81666666666688,
+      "cycle": 3.183333333333337,
+      "dead": true,
+      "deathTime": 3.516666666666659
+    },
+    "enemies": [],
+    "rescues": [
+      {
+        "id": 30,
+        "x": -3.2,
+        "y": 6.987999999999961,
+        "px": -3.2,
+        "py": 6.999999999999961,
+        "progress": 1,
+        "active": false,
+        "age": 4.183333333333324,
+        "rescued": true
+      },
+      {
+        "id": 39,
+        "x": 3,
+        "y": 6.987999999999961,
+        "px": 3,
+        "py": 6.999999999999961,
+        "progress": 1,
+        "active": false,
+        "age": 4.183333333333324,
+        "rescued": true
+      },
+      {
+        "id": 74,
+        "x": 0,
+        "y": 6.603999999999975,
+        "px": 0,
+        "py": 6.615999999999975,
+        "progress": 1,
+        "active": false,
+        "age": 4.716666666666655,
+        "rescued": true
+      }
+    ],
+    "bullets": [],
+    "pickups": [],
+    "lasers": [],
+    "score": 12725,
+    "scrap": 90,
+    "drawCalls": 62,
+    "memory": {
+      "geometries": 58,
+      "textures": 1
+    },
+    "visual": {
+      "version": "0.3.0",
+      "quality": 1,
+      "viewport": {
+        "scale": 32.142857142857146,
+        "fieldWidth": 514.2857142857143,
+        "fieldHeight": 900.0000000000001,
+        "worldWidth": 49.77777777777777,
+        "worldHeight": 27.999999999999996
+      }
+    },
+    "save": {
+      "schemaVersion": 2,
+      "scrap": 0,
+      "upgrades": {
+        "motor": 0,
+        "canhao": 0,
+        "ima": 0
+      },
+      "cleared": false,
+      "bestScore": 0,
+      "medals": [],
+      "settings": {
+        "sound": true
+      },
+      "attempts": 0
+    },
+    "loops": 0
+  }
+}

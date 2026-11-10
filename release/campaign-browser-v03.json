@@ -1,0 +1,22 @@
+{
+  "checks": [
+    "Fresh profile: M02 locked until M01 Normal victory; five route nodes",
+    "M03–M05 displayed but not playable",
+    "Legacy v0.2 M01 clear unlocks M02 via map → briefing → normal play, no debug required",
+    "Campaign reload retains legacy M01 record, upgrades and last mission",
+    "Six M02 boss restarts: stable geometry count, no duplicate audio loops",
+    "M02 mobile portrait 390×844: actual CDP drag, fullscreen canvas, no side panels",
+    "Mobile map scrolls to briefing, locked play button visible and functional"
+  ],
+  "errors": [],
+  "bossGeometryCounts": [
+    105,
+    105,
+    105,
+    105,
+    105,
+    105
+  ],
+  "baseline": 105,
+  "browser": "158.0.8127.18"
+}
