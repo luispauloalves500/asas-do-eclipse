@@ -1,4 +1,12 @@
 import "./style.css";
+import { stages, stageInfo, type StageId } from "../data/stages";
+import {
+  record,
+  available,
+  rememberStage,
+  completeAttempt,
+} from "../persistence/Campaign";
+import { campaignMap } from "./CampaignMap";
 import { Clock } from "../core/Clock";
 import { World } from "../gameplay/World";
 import { Renderer } from "../render/Renderer";
@@ -29,8 +37,15 @@ let world: World | null = null,
   modal = "";
 const clock = new Clock();
 let qaControl: Commands | null = null;
-document.documentElement.dataset.version = "0.2.0";
+document.documentElement.dataset.version = "0.3.0";
 const debug = new URLSearchParams(location.search).get("debug");
+const requested = new URLSearchParams(location.search).get("stage");
+let selectedStage: StageId =
+  debug && requested === "M02"
+    ? "M02"
+    : save.campaign?.lastStage || (save.cleared ? "M02" : "M01");
+if (!debug && !available(save, selectedStage)) selectedStage = "M01";
+let mapNode: string = selectedStage;
 const input = new InputRouter(stage, togglePause);
 const nf = new Intl.NumberFormat("pt-BR");
 const fmt = (v: number) => nf.format(Math.round(v));
@@ -43,7 +58,7 @@ function brand() {
   return '<div class="brand"><i class="emblem"><span>Λ</span></i> ESQUADRÃO AURORA</div>';
 }
 function footer() {
-  return `<div class="footer"><span>FATIA VERTICAL · M01 · v0.2.0</span><span>${store.status} · SEM SERVIÇOS EXTERNOS</span></div>`;
+  return `<div class="footer"><span>ATO I · M01 + M02 · v0.3.0</span><span>${store.status} · SEM SERVIÇOS EXTERNOS</span></div>`;
 }
 function base(content: string) {
   return `<div class="screen">${brand()}<div class="top-right"><span>ASTERION / SETOR 01</span><span>◈ ${fmt(save.scrap)} SUCATAS</span></div>${content}${footer()}</div>`;
@@ -65,13 +80,15 @@ function menu() {
 function renderScreen() {
   if (screen === "menu")
     ui.innerHTML = base(
-      `<div class="menu-copy"><div class="eyebrow">Ato I / Céu perdido</div><h1>ASAS DO<br><em>ECLIPSE</em></h1><div class="subtitle">GUERRA DOS CÉUS</div><p>O céu está fechado. Ainda existe uma rota.<br>Voe pela Aurora. Traga todos para casa.</p><div class="menu-nav">${btn("briefing", `<span>${save.cleared ? "JOGAR NOVAMENTE" : "INICIAR MISSÃO"}<small>01 / RUÍNAS DE ARKAN</small></span><span>↗</span>`, "primary launch")}${btn("hangar", "HANGAR <small>Aeronave e melhorias</small>")}${btn("options", "OPÇÕES <small>Áudio e controles</small>")}${btn("credits", "CRÉDITOS")}${btn("export", "EXPORTAR SAVE")}</div></div><div class="menu-detail"><div class="label">A01 / Caça de resistência</div><h3>VÉSPERA</h3><p>Projetada para resistir.<br>Preparada para recomeçar.</p><div class="rule"></div><div class="label">AUTOFIRE • 100 HP • ${upgrades.motor.effect(save.upgrades.motor)}</div></div>`,
+      `<div class="menu-copy"><div class="eyebrow">Ato I / Céu perdido</div><h1>ASAS DO<br><em>ECLIPSE</em></h1><div class="subtitle">GUERRA DOS CÉUS</div><p>O céu está fechado. Ainda existe uma rota.<br>Voe pela Aurora. Traga todos para casa.</p><div class="menu-nav">${btn("briefing", `<span>${save.cleared ? "JOGAR NOVAMENTE" : "INICIAR MISSÃO"}<small>${selectedStage} / ${stageInfo[selectedStage].name.toUpperCase()}</small></span><span>↗</span>`, "primary launch")}${btn("map", "CAMPANHA <small>Mapa do Ato I</small>")}${btn("hangar", "HANGAR <small>Aeronave e melhorias</small>")}${btn("options", "OPÇÕES <small>Áudio e controles</small>")}${btn("credits", "CRÉDITOS")}${btn("export", "EXPORTAR SAVE")}</div></div><div class="menu-detail"><div class="label">A01 / Caça de resistência</div><h3>VÉSPERA</h3><p>Projetada para resistir.<br>Preparada para recomeçar.</p><div class="rule"></div><div class="label">AUTOFIRE • 100 HP • ${upgrades.motor.effect(save.upgrades.motor)}</div></div>`,
     );
-  else if (screen === "briefing")
+  else if (screen === "map") ui.innerHTML = base(campaignMap(save, mapNode));
+  else if (screen === "briefing") {
+    const info = stageInfo[selectedStage];
     ui.innerHTML = base(
-      `<section class="briefing">${btn("menu", "← VOLTAR", "back")}<div class="eyebrow">Missão 01 / Vale de Arkan</div><h2>Ruínas<br>de Arkan</h2><p>A rede NÓX tomou a represa. Abra o corredor de evacuação e neutralize a plataforma antiaérea Gárgula-01.</p><div class="facts"><div><span class="label">Duração prevista</span><b>6–7 minutos</b></div><div><span class="label">Aeronave</span><b>A01 Véspera</b></div><div><span class="label">Ameaças</span><b>Caças, tanques e AA</b></div><div><span class="label">Dificuldade</span><b>Normal</b></div></div><div class="objectives"><span class="label">Objetivos</span><p>◇ Derrotar Gárgula-01 e abrir a rota.</p><p>◇ Resgatar 3 civis: fique perto por 1,5 s.</p><p>◇ Destruir 70% / 95% dos alvos. Sobreviver.</p></div><div class="buttons">${btn("start", "INICIAR VOO ↗", "primary")}${btn("hangar", "PREPARAR NAVE")}</div></section>`,
+      `<section class="briefing">${btn("map", "← MAPA", "back")}<div class="eyebrow">${selectedStage} / ${info.biome}</div><h2>${info.name}</h2><p>${info.intro}</p><div class="facts"><div><span class="label">Duração prevista</span><b>${info.duration}</b></div><div><span class="label">Aeronave</span><b>A01 Véspera</b></div><div><span class="label">Ameaças</span><b>${info.risk}</b></div><div><span class="label">Dificuldade</span><b>Normal</b></div></div><div class="objectives"><span class="label">Objetivos</span><p>◇ Derrotar ${info.boss} e abrir a rota.</p><p>◇ Resgatar 3 civis: fique perto por 1,5 s.</p><p>◇ ${selectedStage === "M02" ? "Destruir dois vagões de munição antes da fuga." : "Destruir 70% / 95% dos alvos. Sobreviver."}</p></div><div class="buttons">${btn("start", "INICIAR VOO ↗", "primary")}${btn("hangar", "PREPARAR NAVE")}</div></section>`,
     );
-  else if (screen === "hangar")
+  } else if (screen === "hangar")
     ui.innerHTML = base(
       `<section class="hangar">${btn("menu", "← MENU", "back")}<div class="eyebrow">Ícaro / Oficina da Aurora</div><header><div><h2>Pronta para<br>o próximo voo.</h2></div><div><div class="label">Sucatas</div><div class="balance">${fmt(save.scrap)}</div></div></header>${(
         Object.keys(upgrades) as Upgrade[]
@@ -83,7 +100,7 @@ function renderScreen() {
         })
         .join(
           "",
-        )}<p style="font-size:11px;margin:15px 0">Melhorias permanentes. Primeira vitória: 300 sucatas + bônus.<br>Em derrota, você mantém 60% da sucata coletada.</p><div class="buttons">${btn("briefing", "PREPARAR MISSÃO ↗", "primary")}</div>${store.status.startsWith("Não") ? `<p class="save-warning">${store.status}</p>` : ""}</section>`,
+        )}<p style="font-size:11px;margin:15px 0">Melhorias permanentes. Primeira vitória: 300 (M01) / 410 (M02) sucatas + bônus.<br>Em derrota, você mantém 60% da sucata coletada.</p><div class="buttons">${btn("briefing", "PREPARAR MISSÃO ↗", "primary")}</div>${store.status.startsWith("Não") ? `<p class="save-warning">${store.status}</p>` : ""}</section>`,
     );
   else if (screen === "options")
     ui.innerHTML = base(
@@ -91,13 +108,22 @@ function renderScreen() {
     );
   else if (screen === "credits")
     ui.innerHTML = base(
-      `<section class="options credits">${btn("menu", "← MENU", "back")}<div class="eyebrow">Uma rota original</div><h2>Asas do Eclipse</h2><p>Guerra dos Céus · Fatia vertical M01<br>Universo e design: GDD original fornecido pelo criador.<br>Implementação, modelos low-poly, interface e áudio sintetizado: produzidos para este protótipo.</p><p>Three.js — licença MIT.<br>Vite, TypeScript, Vitest e Playwright — ferramentas de desenvolvimento (licenças em ASSET_LICENSES.md).</p><p>Nenhuma arte, código, música ou padrão foi extraído de Sky Force. Este é um protótipo original em evolução, não a campanha completa.</p><div class="label">Próximo marco: validar M01 antes de expandir.</div></section>`,
+      `<section class="options credits">${btn("menu", "← MENU", "back")}<div class="eyebrow">Uma rota original</div><h2>Asas do Eclipse</h2><p>Guerra dos Céus · Fatia vertical M01 + M02<br>Universo e design: GDD original fornecido pelo criador.<br>Implementação, modelos low-poly, interface e áudio sintetizado: produzidos para este protótipo.</p><p>Three.js — licença MIT.<br>Vite, TypeScript, Vitest e Playwright — ferramentas de desenvolvimento (licenças em ASSET_LICENSES.md).</p><p>Nenhuma arte, código, música ou padrão foi extraído de Sky Force. Este é um protótipo original em evolução, não a campanha completa.</p><div class="label">Próximo marco: validar M02 e a campanha antes de M03.</div></section>`,
     );
   else if (screen === "game") renderGame();
 }
 function start() {
   renderer.clearSession();
-  world = new World(save, !!debug);
+  if (!debug && !available(save, selectedStage)) {
+    show("map");
+    return;
+  }
+  renderer.setStage(selectedStage);
+  world = new World(save, !!debug, selectedStage);
+  if (!debug) {
+    rememberStage(save, selectedStage);
+    store.write(save);
+  }
   resultPaid = false;
   qaControl = null;
   show("game");
@@ -109,7 +135,7 @@ function start() {
   updateHUD();
 }
 function renderGame() {
-  ui.innerHTML = `<div class="field-ui"><div class="hud-top"><div><div class="label">Integridade</div><b id="hp">100 / 100</b><div class="hpbar" id="hpbar"><i></i></div></div><div class="score"><div class="label">Pontuação</div><b id="score">0</b><div class="hud-small"><span id="combo">x1,0</span><span id="time">00:00</span></div></div><div>${btn("pause", "Ⅱ", "icon", 'aria-label="Pausar"')}<div class="hud-small" id="rescues">0/3</div></div></div><div class="flight-strip"><span>M01 / ARKAN</span><span>◈ <b id="scrap">0</b></span><span>ALVOS <b id="elimination">0%</b></span></div><div id="boss"></div><div id="rescue-labels"></div><div class="radio" id="radio"></div>${debug ? '<div class="debug-tag">TESTE / SEM RECOMPENSAS DE PERFIL</div>' : ""}<div class="hud-bottom">${btn("bomb", '[E] PULSO <b id="bombs">2</b><small>LIMPA PROJÉTEIS</small>')}${btn("special", '[SHIFT] RAIO <b id="specials">2</b><small>FEIXE PERFURANTE</small>')}</div></div><div id="overlays"></div>`;
+  ui.innerHTML = `<div class="field-ui"><div class="hud-top"><div><div class="label">Integridade</div><b id="hp">100 / 100</b><div class="hpbar" id="hpbar"><i></i></div></div><div class="score"><div class="label">Pontuação</div><b id="score">0</b><div class="hud-small"><span id="combo">x1,0</span><span id="time">00:00</span></div></div><div>${btn("pause", "Ⅱ", "icon", 'aria-label="Pausar"')}<div class="hud-small" id="rescues">0/3</div></div></div><div class="flight-strip"><span>${selectedStage === "M01" ? "M01 / ARKAN" : "M02 / CÂNION"}</span><span>◈ <b id="scrap">0</b></span><span>ALVOS <b id="elimination">0%</b></span></div><div id="boss"></div><div id="rescue-labels"></div><div id="convoy-labels"></div><div class="radio" id="radio"></div>${debug ? '<div class="debug-tag">TESTE / SEM RECOMPENSAS DE PERFIL</div>' : ""}<div class="hud-bottom">${btn("bomb", '[E] PULSO <b id="bombs">2</b><small>LIMPA PROJÉTEIS</small>')}${btn("special", '[SHIFT] RAIO <b id="specials">2</b><small>FEIXE PERFURANTE</small>')}</div></div><div id="overlays"></div>`;
 }
 function text(id: string, value: string) {
   const e = document.getElementById(id);
@@ -134,6 +160,15 @@ function updateHUD() {
   text("accuracy", `${Math.round(w.accuracy * 100)}%`);
   text("scrap", fmt(w.scrap));
   text("segment", w.segment);
+  const convoyLabels = document.getElementById("convoy-labels");
+  if (convoyLabels)
+    convoyLabels.innerHTML = w.convoys
+      .filter((c) => c.active && c.hp > 0)
+      .map(
+        (c) =>
+          `<div class="rescue-label convoy-label" style="left:${((c.x + 8) / 16) * 100}%;top:${((14 - c.y - 1.9) / 28) * 100}%">◈ MUNIÇÃO · ${Math.ceil(c.hp)}</div>`,
+      )
+      .join("");
   text("radio", w.message);
   document
     .getElementById("radio")
@@ -150,6 +185,10 @@ function updateHUD() {
   const be = document.getElementById("boss");
   if (be) {
     const b = w.boss;
+    if (b?.cars && !b.dead) {
+      be.innerHTML = `<div class="boss-hud"><div class="boss-name"><span>SERPENTE DE FERRO</span><span class="gold">FASE ${b.phase}</span></div><div class="bar"><i style="width:${b.hp / 9}%"></i></div><div class="part-bars">${b.cars.map((c, i) => `<span>${i === 0 ? "REATOR" : "VAGÃO " + i} · ${Math.ceil(c.hp)}<div class="bar"><i style="width:${(c.hp / c.maxHp) * 100}%"></i></div></span>`).join("")}</div><div class="label">${b.invul > 0 ? "TRANSIÇÃO · " + b.invul.toFixed(1) + " s" : "JUNTAS / REATOR EXPOSTOS"}</div></div>`;
+      return;
+    }
     be.innerHTML =
       b && !b.dead
         ? `<div class="boss-hud"><div class="boss-name"><span>GÁRGULA-01</span><span class="gold">FASE ${b.phase}</span></div><div class="bar"><i style="width:${b.hp / 6}%"></i></div><div class="part-bars"><span>CANHÃO E · ${Math.ceil(b.left)}<div class="bar"><i style="width:${b.left / 2}%"></i></div></span><span>${b.invul > 0 ? "TRANSIÇÃO · " + b.invul.toFixed(1) + " s" : `NÚCLEO · ${Math.ceil(b.hp)} / 600`}</span><span>CANHÃO D · ${Math.ceil(b.right)}<div class="bar"><i style="width:${b.right / 2}%"></i></div></span></div></div>`
@@ -212,7 +251,11 @@ function finish() {
     { id: "survive", name: "SEM PERDER NAVE", ok: win },
     { id: "ace", name: "ÁS · SEM DANO", ok: win && w.damageTaken === 0 },
   ];
-  const base = win ? (save.cleared ? 180 : 300) : 0;
+  const base = win
+    ? Math.round(
+        stageInfo[w.stageId].base * (record(save, w.stageId).cleared ? 0.6 : 1),
+      )
+    : 0;
   const bonus = win
     ? Math.round(
         base *
@@ -221,22 +264,24 @@ function finish() {
             (w.damageTaken === 0 ? 0.1 : 0)),
       )
     : 0;
-  const earned = win ? w.scrap + base + bonus : Math.floor(w.scrap * 0.6);
+  const ammoBonus =
+    win && w.stageId === "M02" && w.ammoDestroyed === 2 ? 80 : 0;
+  const earned = win
+    ? w.scrap + base + bonus + ammoBonus
+    : Math.floor(w.scrap * 0.6);
   if (!w.debug) {
     save.scrap += earned;
-    save.attempts++;
-    save.bestScore = Math.max(save.bestScore, w.score);
-    if (win) save.cleared = true;
-    save.medals = [
-      ...new Set([
-        ...save.medals,
-        ...medals.filter((m) => m.ok).map((m) => m.id),
-      ]),
-    ];
+    completeAttempt(
+      save,
+      w.stageId,
+      win,
+      w.score,
+      medals.filter((m) => m.ok).map((m) => m.id),
+    );
     store.write(save);
   }
   const out = document.getElementById("overlays")!;
-  out.innerHTML = `<div class="overlay"><div class="dialog report"><div class="eyebrow">Relatório da operação / M01</div><h2>${win ? "Corredor liberado." : "Ainda há uma rota."}</h2><p>${win ? "Lina: Arkan está livre. Ícaro: trouxe peças? O motor pode ficar melhor." : `Derrubado por: ${w.lastDamage}.<br>Saia da linha de mira antes do feixe. Use a bomba para limpar projéteis.`}</p><div class="stats-grid">${[
+  out.innerHTML = `<div class="overlay"><div class="dialog report"><div class="eyebrow">Relatório da operação / ${w.stageId}</div><h2>${win ? (w.stageId === "M02" ? "O mapa está conosco." : "Corredor liberado.") : "Ainda há uma rota."}</h2><p>${win ? (w.stageId === "M02" ? "Suri: encontrei coordenadas de uma estação Farol no trem. A próxima rota leva à Fortaleza do Vento." : "Lina: Arkan está livre. Ícaro: trouxe peças? O motor pode ficar melhor.") : `Derrubado por: ${w.lastDamage}.<br>Saia da linha de mira antes do feixe. Use a bomba para limpar projéteis.`}</p><div class="stats-grid">${[
     ["TEMPO", time(w.time)],
     ["PRECISÃO", `${Math.round(w.accuracy * 100)}%`],
     ["RESGATES", `${w.rescued} / 3`],
@@ -250,7 +295,7 @@ function finish() {
     )
     .join(
       "",
-    )}</div><div class="medals">${medals.map((m) => `<span class="medal ${m.ok ? "earned" : ""}">${m.ok ? "◆" : "◇"} ${m.name}</span>`).join("")}</div><div class="label">ELIMINAÇÃO M01: ${w.elimination >= 0.7 ? "◆" : "◇"} 70% · ${w.elimination >= 0.95 ? "◆" : "◇"} 95% &nbsp; CANHÕES: ${w.parts}/2</div><div class="earned-scrap"><div><span class="label">${w.debug ? "TESTE · SEM GANHOS REAIS" : win ? "Sucata garantida + coleta + bônus" : "Sucata mantida · 60% da coleta"}</span><p style="margin:4px 0 0;font-size:10px">${win ? `${base} base + ${w.scrap} coleta + ${bonus} bônus` : `${w.scrap} coletadas nesta tentativa`}</p></div><b>+${w.debug ? 0 : fmt(earned)}</b></div><div class="buttons">${btn("start", win ? "JOGAR NOVAMENTE" : "TENTAR NOVAMENTE", "primary")}${btn("hangar", "HANGAR")}${btn("menu", "MENU")}</div><p class="${store.status.startsWith("Não") ? "save-warning" : "label"}" style="margin-bottom:0">${store.status}</p>${store.status.startsWith("Não") ? btn("export", "EXPORTAR BACKUP") : ""}</div></div>`;
+    )}</div><div class="medals">${medals.map((m) => `<span class="medal ${m.ok ? "earned" : ""}">${m.ok ? "◆" : "◇"} ${m.name}</span>`).join("")}</div><div class="label">ELIMINAÇÃO ${w.stageId}: ${w.elimination >= 0.7 ? "◆" : "◇"} 70% · ${w.elimination >= 0.95 ? "◆" : "◇"} 95% &nbsp; ${w.stageId === "M02" ? "VAGÕES" : "CANHÕES"}: ${w.parts}/${w.stageId === "M02" ? 3 : 2}${w.stageId === "M02" ? ` · MUNIÇÃO ${w.ammoDestroyed}/2 · BÔNUS +${ammoBonus}` : ""}</div><div class="earned-scrap"><div><span class="label">${w.debug ? "TESTE · SEM GANHOS REAIS" : win ? "Sucata garantida + coleta + bônus" : "Sucata mantida · 60% da coleta"}</span><p style="margin:4px 0 0;font-size:10px">${win ? `${base} base + ${w.scrap} coleta + ${bonus + ammoBonus} bônus` : `${w.scrap} coletadas nesta tentativa`}</p></div><b>+${w.debug ? 0 : fmt(earned)}</b></div><div class="buttons">${btn("start", win ? "JOGAR NOVAMENTE" : "TENTAR NOVAMENTE", "primary")}${win && w.stageId === "M01" ? btn("next-stage", "PRÓXIMA MISSÃO ↗") : btn("map", "MAPA")}${btn("hangar", "HANGAR")}${btn("menu", "MENU")}</div><p class="${store.status.startsWith("Não") ? "save-warning" : "label"}" style="margin-bottom:0">${store.status}</p>${store.status.startsWith("Não") ? btn("export", "EXPORTAR BACKUP") : ""}</div></div>`;
 }
 function exportSave() {
   const blob = new Blob([JSON.stringify(save, null, 2)], {
@@ -272,8 +317,32 @@ ui.addEventListener("click", async (e) => {
   if (!button.isConnected) return;
   audio.sfx("ui");
   const action = button.dataset.action!;
-  if (["menu", "briefing", "hangar", "options", "credits"].includes(action)) {
+  if (
+    ["menu", "briefing", "hangar", "options", "credits", "map"].includes(action)
+  ) {
     show(action);
+    return;
+  }
+  if (action.startsWith("map-select:")) {
+    mapNode = action.split(":")[1];
+    if (mapNode === "M01" || mapNode === "M02") renderer.setStage(mapNode);
+    renderScreen();
+    return;
+  }
+  if (action.startsWith("map-play:")) {
+    const id = action.split(":")[1];
+    if ((id === "M01" || id === "M02") && available(save, id)) {
+      selectedStage = id;
+      renderer.setStage(id);
+      show("briefing");
+    }
+    return;
+  }
+  if (action === "next-stage") {
+    selectedStage = "M02";
+    mapNode = "M02";
+    renderer.setStage("M02");
+    show("briefing");
     return;
   }
   if (action === "start") {
@@ -373,6 +442,10 @@ if (debug) {
   (window as any).__AURORA__ = {
     state: () => ({
       screen,
+      selectedStage,
+      stageId: world?.stageId,
+      ammoDestroyed: world?.ammoDestroyed,
+      convoys: world?.convoys.map((c) => ({ ...c })),
       paused,
       state: world?.state,
       time: world?.time,
@@ -390,7 +463,7 @@ if (debug) {
       drawCalls: renderer.renderCalls,
       memory: { ...renderer.renderer.info.memory },
       visual: {
-        version: "0.2.0",
+        version: "0.3.0",
         quality: renderer.quality.level,
         viewport: renderer.metrics,
       },

@@ -1,3 +1,4 @@
+import type { Campaign } from "./Campaign";
 import { upgrades, cost, type Upgrade } from "../data/upgrades";
 export interface Save {
   schemaVersion: 2;
@@ -8,6 +9,7 @@ export interface Save {
   medals: string[];
   settings: { sound: boolean };
   attempts: number;
+  campaign?: Campaign;
 }
 export const fresh = (): Save => ({
   schemaVersion: 2,
@@ -42,6 +44,30 @@ export function migrate(raw: unknown): Save {
     ? d.medals.filter((m: unknown) => typeof m === "string").slice(0, 8)
     : [];
   s.settings.sound = d.settings?.sound !== false;
+  if (d.campaign?.stages) {
+    s.campaign = {
+      lastStage: d.campaign.lastStage === "M02" ? "M02" : "M01",
+      stages: {},
+    };
+    for (const id of ["M01", "M02"] as const) {
+      const v = d.campaign.stages[id];
+      if (v && typeof v === "object")
+        s.campaign.stages[id] = {
+          cleared: v.cleared === true,
+          bestScore: finite(v.bestScore),
+          medals: Array.isArray(v.medals)
+            ? v.medals.filter((m: unknown) => typeof m === "string").slice(0, 8)
+            : [],
+        };
+    }
+    if (s.campaign.stages.M01) {
+      s.cleared = s.campaign.stages.M01.cleared;
+      s.bestScore = s.campaign.stages.M01.bestScore;
+      s.medals = [...s.campaign.stages.M01.medals];
+    }
+    if (s.campaign.lastStage === "M02" && !s.cleared)
+      s.campaign.lastStage = "M01";
+  }
   return s;
 }
 export function buy(s: Save, k: Upgrade) {

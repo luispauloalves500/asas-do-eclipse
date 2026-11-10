@@ -1,5 +1,17 @@
 # Histórico
 
+## v0.3.0 — 10/11/2026
+
+- M02 Estrada de Ferro Fantasma: cânion ocre instanciado, pontes de aço, trilhos marcados, depósitos e comboios em movimento.
+- E03 Raptor (mira passada), E07 Arpão (salvas com brechas) e E08 Semeador (minas materializam após 0,6 s). Ondas e resgates dirigidos por JSON.
+- Objetivo bônus: destruir dois vagões de munição antes da fuga; falas de Suri e coordenadas da estação Farol.
+- Serpente de Ferro: reator + três vagões, juntas douradas atingíveis, três fases e avisos audiovisuais; destruição individual desativa armas.
+- Mapa simplificado do Ato I com cinco nós, briefing, recordes e medalhas por missão. M02 desbloqueia após vitória M01 Normal; M03–M05 ficam em produção. Relatório M01 oferece Próxima missão.
+- Save aditivo preserva moeda, melhorias e dados v0.1/v0.2; recompensas M02 410 na primeira vitória / 246 replay, além de coleta e bônus.
+- Corrigida lacuna periódica na reciclagem do terreno de ambos os biomas; avisos de laser sem duração nunca causam dano.
+- 40 testes unitários; playthroughs acelerados com dano de M01/M02, campanha desktop/móvel e verificações de regressão. Evidências em `release/screenshots/v0.3/` e `qa/reports/2026-11-10-v0.3.0.md`.
+- Postura adiada para M03; permanecem as três melhorias globais da fatia inicial.
+
 ## v0.2.0 — 10/11/2026
 
 - Removidos os painéis laterais de operação/telemetria. A cena Three.js agora ocupa a tela inteira; fora do campo de combate o próprio terreno continua, com vinheta suave. HUD essencial permanece no campo lógico.

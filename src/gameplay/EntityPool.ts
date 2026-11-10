@@ -13,6 +13,9 @@ export interface Bullet {
   clearable: boolean;
   source: string;
   life: number;
+  arm: number;
+  style: "round" | "wide" | "mine";
+  owner: number;
 }
 export class BulletPool {
   items: Bullet[] = Array.from({ length: 600 }, (_, i) => ({
@@ -30,6 +33,9 @@ export class BulletPool {
     clearable: true,
     source: "",
     life: 0,
+    arm: 0,
+    style: "round",
+    owner: 0,
   }));
   spawn(
     x: number,
@@ -57,6 +63,9 @@ export class BulletPool {
       source,
       clearable,
       life: 8,
+      arm: 0,
+      style: "round",
+      owner: 0,
     });
     return b;
   }

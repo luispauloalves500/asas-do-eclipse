@@ -311,7 +311,174 @@ export class Models {
     g.add(hit);
     return this.batch(g);
   }
+  raptor() {
+    const g = new T.Group();
+    this.plate(
+      g,
+      P.red,
+      [
+        [0, -1.1],
+        [0.25, -0.38],
+        [1.08, 0.64],
+        [0.8, 0.85],
+        [0.12, 0.3],
+        [0, 0.65],
+        [-0.12, 0.3],
+        [-0.8, 0.85],
+        [-1.08, 0.64],
+        [-0.25, -0.38],
+      ],
+      0.28,
+      0.16,
+    );
+    this.ball(g, P.plate, 0, -0.05, 0.58, 0.2, 0.75, 0.18);
+    this.ball(g, P.black, 0, -0.46, 0.74, 0.14, 0.3, 0.1);
+    for (const x of [-0.52, 0.52]) {
+      this.cyl(g, P.black, x, 0.36, 0.43, 0.13, 0.7, "y");
+      this.glow(g, "engine" + x, x, 0.73, 0.44, P.hot, 0.1);
+      this.box(g, P.edge, x * 0.6, 0.22, 0.7, 0.08, 0.55, 0.1);
+    }
+    this.glow(g, "aim", 0, -0.8, 0.7, P.hot, 0.06);
+    return this.batch(g);
+  }
+  harpoon() {
+    const g = new T.Group();
+    this.cyl(g, P.black, 0, 0, 0.2, 1.05, 0.4);
+    this.plate(
+      g,
+      P.plate,
+      [
+        [-0.8, -0.65],
+        [0.8, -0.65],
+        [1, 0.3],
+        [0.6, 0.75],
+        [-0.6, 0.75],
+        [-1, 0.3],
+      ],
+      0.42,
+      0.3,
+    );
+    const turret = this.group(g, "turret");
+    this.box(turret, P.red, 0, 0, 1, 1.5, 0.8, 0.5);
+    for (const x of [-0.52, 0, 0.52]) {
+      this.cyl(turret, P.black, x, -0.65, 1.06, 0.14, 1.4, "y");
+      this.cyl(turret, P.edge, x, -1.22, 1.06, 0.2, 0.24, "y");
+      this.glow(turret, "barrel" + x, x, -1.38, 1.06, P.hot, 0.085);
+    }
+    for (const x of [-0.78, 0.78])
+      this.box(g, P.edge, x, 0.05, 0.86, 0.17, 1, 0.15);
+    return this.batch(g);
+  }
+  seeder() {
+    const g = new T.Group();
+    this.cyl(g, P.black, 0, 0, 0.3, 0.8, 0.4);
+    this.cyl(g, P.red, 0, 0, 0.62, 0.64, 0.35);
+    this.box(g, P.plate, 0, 0, 0.92, 0.9, 1.1, 0.22);
+    for (const x of [-0.75, 0.75])
+      for (const y of [-0.5, 0.5]) {
+        this.box(g, P.edge, x * 0.6, y, 0.54, 0.7, 0.12, 0.1);
+        this.cyl(g, P.black, x, y, 0.72, 0.33, 0.15);
+        this.cyl(g, P.red, x, y, 0.83, 0.23, 0.07);
+        this.box(g, P.edge, x, y, 0.89, 0.55, 0.04, 0.025);
+      }
+    for (const y of [-0.25, 0.25])
+      this.glow(g, "mine" + y, 0, y, 1.12, P.hot, 0.14);
+    this.box(g, P.gold, 0, -0.55, 1, 0.6, 0.1, 0.1);
+    return this.batch(g);
+  }
+  railCar(index: number, ammo = false) {
+    const g = new T.Group();
+    this.box(g, P.black, 0, 0, 0.25, 1.7, 2.3, 0.5);
+    for (const x of [-0.78, 0.78]) {
+      this.box(g, P.edge, x, 0, 0.58, 0.15, 2.4, 0.18);
+      for (const y of [-0.8, 0.8])
+        this.cyl(g, P.black, x, y, 0.25, 0.28, 0.28, "y");
+    }
+    this.plate(
+      g,
+      P.plate,
+      [
+        [-0.7, -1.08],
+        [0.7, -1.08],
+        [0.8, 0.85],
+        [0.45, 1.12],
+        [-0.45, 1.12],
+        [-0.8, 0.85],
+      ],
+      0.54,
+      0.35,
+    );
+    if (index === 0 && !ammo) {
+      this.box(g, P.red, 0, -0.58, 1.05, 1.3, 0.65, 0.6);
+      this.box(g, 0x527783, 0, -0.8, 1.4, 0.95, 0.2, 0.1);
+      this.cyl(g, P.black, 0, 0.23, 1.1, 0.52, 0.35);
+      this.cyl(g, P.hot, 0, 0.23, 1.33, 0.32, 0.12);
+      for (const x of [-0.55, 0.55])
+        this.box(g, P.gold, x, -0.98, 0.85, 0.17, 0.1, 0.1);
+    } else {
+      for (let i = 0; i < 3; i++) {
+        const y = -0.68 + i * 0.65;
+        this.box(g, ammo ? 0xb0743e : P.red, 0, y, 1.03, 1.25, 0.55, 0.4);
+        this.box(g, P.edge, 0, y, 1.27, 1.28, 0.055, 0.04);
+      }
+      if (ammo) {
+        this.box(g, P.gold, 0, 0, 1.36, 0.8, 0.8, 0.04, Math.PI / 4);
+        this.box(g, P.black, 0, 0, 1.4, 0.45, 0.12, 0.05);
+      } else if (index === 2) {
+        for (const x of [-0.4, 0.4]) this.cyl(g, P.edge, x, 0, 1.6, 0.2, 0.7);
+        this.glow(g, "coil", 0, 0, 1.7, 0x69dcff, 0.18);
+      } else this.glow(g, "mineHatch", 0, 0, 1.35, P.hot, 0.14);
+    }
+    for (const x of [-0.65, 0.65])
+      this.glow(g, "hover" + x, x, 0, 0.19, 0x68c9d6, 0.08);
+    return this.batch(g);
+  }
+  serpent() {
+    const g = new T.Group();
+    for (let i = 0; i < 4; i++) {
+      const node = this.group(g, "car" + i);
+      const intact = this.railCar(i);
+      intact.name = "intact";
+      intact.rotation.z = Math.PI / 2;
+      node.add(intact);
+      const wreck = this.group(node, "wreck");
+      this.box(wreck, P.black, 0, 0, 0.4, 2.2, 1.5, 0.35);
+      for (const x of [-0.6, 0.6])
+        this.box(wreck, P.edge, x, 0.1, 0.65, 0.5, 0.9, 0.2, x);
+      this.glow(wreck, "ember", 0, 0, 0.7, 0xff7540, 0.2);
+      wreck.visible = false;
+    }
+    for (let i = 0; i < 3; i++) {
+      const j = this.group(g, "joint" + i);
+      this.box(j, P.edge, 0, 0, 0.5, 1, 0.17, 0.17);
+      this.box(j, P.black, 0, 0, 0.6, 0.22, 0.35, 0.15);
+      this.glow(j, "weakpoint", 0, 0, 0.75, P.gold, 0.19);
+    }
+    return this.batch(g);
+  }
+  convoy() {
+    const g = new T.Group();
+    const ammo = this.railCar(1, true);
+    ammo.name = "ammo";
+    g.add(ammo);
+    const wreck = this.group(g, "wreck");
+    this.box(wreck, P.black, 0, 0, 0.4, 1.5, 2, 0.3);
+    this.glow(wreck, "ember", 0, 0, 0.7, 0xff7540, 0.16);
+    wreck.visible = false;
+    for (const [i, y] of [
+      [0, -2.7],
+      [3, 2.7],
+    ]) {
+      const car = this.railCar(i);
+      car.position.y = y;
+      g.add(car);
+    }
+    return this.batch(g);
+  }
   enemy(kind: EnemyKind) {
+    if (kind === "E03") return this.raptor();
+    if (kind === "E07") return this.harpoon();
+    if (kind === "E08") return this.seeder();
     const g = new T.Group();
     if (kind === "E01" || kind === "E02") {
       const wide = kind === "E01" ? 1 : 1.2;

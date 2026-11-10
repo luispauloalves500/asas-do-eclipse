@@ -1,4 +1,10 @@
-import mission from "../data/stages/M01.json";
+import { stages, type StageId, type Stage } from "../data/stages";
+import {
+  createSerpent,
+  updateSerpent,
+  hitSerpent,
+  type BossCar,
+} from "./SerpentController";
 import { enemies, type EnemyKind } from "../data/enemies";
 import { BulletPool } from "./EntityPool";
 import {
@@ -69,6 +75,13 @@ export interface Laser {
   active: boolean;
   lock: number;
 }
+export interface Convoy extends Circle {
+  px: number;
+  py: number;
+  hp: number;
+  active: boolean;
+  age: number;
+}
 export interface Boss {
   x: number;
   y: number;
@@ -82,12 +95,22 @@ export interface Boss {
   cycle: number;
   dead: boolean;
   deathTime: number;
+  cars?: BossCar[];
+  attackIndex?: number;
 }
 export interface Target extends Circle {
-  type: "enemy" | "core" | "left" | "right";
+  type: "enemy" | "core" | "left" | "right" | "car" | "convoy";
+  carIndex?: number;
+  convoy?: Convoy;
   enemy?: Enemy;
 }
 export class World {
+  mission: Stage;
+  convoyIndex = 0;
+  convoys: Convoy[] = [];
+  ammoDestroyed = 0;
+  ammoEscaped = 0;
+  positionHistory: { time: number; x: number; y: number }[] = [];
   time = 0;
   scroll = 0;
   state: "playing" | "dying" | "victory" | "defeat" = "playing";
@@ -146,12 +169,16 @@ export class World {
   constructor(
     save: Save,
     public debug = false,
+    public stageId: StageId = "M01",
   ) {
+    this.mission = stages[stageId];
     this.speed = 8.2 * (1 + 0.03 * save.upgrades.motor);
     this.damage = 10 * (1 + 0.1 * save.upgrades.canhao);
     this.magnet = 1.575 + 0.35 * save.upgrades.ima;
     this.say(
-      "Lina: Arkan ainda tem gente no solo. Não vamos abandonar ninguém.",
+      stageId === "M01"
+        ? "Lina: Arkan ainda tem gente no solo. Não vamos abandonar ninguém."
+        : "Suri: a ferrovia corta o cânion. Precisamos dos técnicos e dos dados desse comboio.",
       8,
     );
   }
@@ -209,7 +236,18 @@ export class World {
   }
   startBoss() {
     this.enemies = [];
+    this.convoys = [];
     this.pool.clear(true);
+    if (this.stageId === "M02") {
+      this.lasers = [];
+      this.boss = createSerpent();
+      this.say(
+        "NÓX • SERPENTE DE FERRO — juntas e reator são pontos fracos.",
+        5,
+      );
+      this.events.push("laser");
+      return;
+    }
     this.lasers = [];
     this.boss = {
       x: 0,
@@ -229,8 +267,9 @@ export class World {
     this.events.push("laser");
   }
   jumpBoss() {
-    this.time = 340;
-    this.waveIndex = mission.waves.length;
+    this.time = this.mission.bossEntryAtSeconds;
+    this.convoyIndex = this.mission.convoys?.length || 0;
+    this.waveIndex = this.mission.waves.length;
     this.rescueIndex = 3;
     this.repairSpawned = true;
     this.startBoss();
@@ -259,13 +298,20 @@ export class World {
       return;
     }
     this.time += dt;
-    this.scroll += mission.scrollSpeed * dt;
+    this.scroll += this.mission.scrollSpeed * dt;
     this.animate(dt);
     this.messageTime = Math.max(0, this.messageTime - dt);
     this.comboTimer -= dt;
     if (this.comboTimer <= 0) this.combo = Math.max(1, this.combo - dt * 0.5);
+    this.positionHistory.push({
+      time: this.time,
+      x: this.player.x,
+      y: this.player.y,
+    });
+    while (this.positionHistory.length > 120) this.positionHistory.shift();
     this.director();
     this.movePlayer(dt, c);
+    this.updateConvoys(dt);
     this.updateEnemies(dt);
     this.updateBoss(dt);
     this.updateProjectiles(dt);
@@ -279,16 +325,16 @@ export class World {
   }
   director() {
     while (
-      this.waveIndex < mission.waves.length &&
-      this.time >= mission.waves[this.waveIndex].atSeconds
+      this.waveIndex < this.mission.waves.length &&
+      this.time >= this.mission.waves[this.waveIndex].atSeconds
     ) {
-      const w = mission.waves[this.waveIndex++];
+      const w = this.mission.waves[this.waveIndex++];
       for (let i = 0; i < w.count; i++) {
         const x =
           w.count === 1
             ? -4
             : (i - (w.count - 1) / 2) *
-              (w.enemy === "E05" || w.enemy === "E06" ? 8 : 2.3);
+              (["E05", "E06", "E07", "E08"].includes(w.enemy) ? 8 : 2.3);
         this.spawnEnemy(
           w.enemy as EnemyKind,
           x,
@@ -297,10 +343,10 @@ export class World {
       }
     }
     while (
-      this.rescueIndex < mission.rescues.length &&
-      this.time >= mission.rescues[this.rescueIndex].atSeconds
+      this.rescueIndex < this.mission.rescues.length &&
+      this.time >= this.mission.rescues[this.rescueIndex].atSeconds
     ) {
-      const r = mission.rescues[this.rescueIndex++];
+      const r = this.mission.rescues[this.rescueIndex++];
       this.rescues.push({
         id: this.id++,
         x: r.laneX,
@@ -314,12 +360,43 @@ export class World {
       });
       this.say("SIGNAL CIVIL • aproxime-se e mantenha 1,5 s no círculo.", 5);
     }
-    if (!this.repairSpawned && this.time >= mission.repairAtSeconds) {
+    if (!this.repairSpawned && this.time >= this.mission.repairAtSeconds) {
       this.repairSpawned = true;
       this.spawnPickup("repair", 2, 11, 25);
       this.say("Kit de reparo à direita • +25 de integridade.", 4);
     }
-    if (!this.boss && this.time >= mission.bossEntryAtSeconds) this.startBoss();
+    while (
+      this.convoyIndex < (this.mission.convoys?.length || 0) &&
+      this.time >= this.mission.convoys![this.convoyIndex].atSeconds
+    ) {
+      const c = this.mission.convoys![this.convoyIndex++];
+      this.convoys.push({
+        id: this.id++,
+        x: c.laneX,
+        y: 17,
+        px: c.laneX,
+        py: 17,
+        r: 0.9,
+        hp: 80,
+        active: true,
+        age: 0,
+      });
+      this.say("Suri: vagão de munição marcado. Destrua-o antes que fuja!", 5);
+    }
+    if (this.stageId === "M02") {
+      if (this.time > 195 && this.time < 195.04)
+        this.say(
+          "Suri: os Semeadores minam os trilhos. O centro do cânion continua livre.",
+          6,
+        );
+      if (this.time > 306 && this.time < 306.04)
+        this.say(
+          "Suri: último depósito à frente. Depois vem a Serpente de Ferro.",
+          5,
+        );
+    }
+    if (!this.boss && this.time >= this.mission.bossEntryAtSeconds)
+      this.startBoss();
     if (this.time > 6 && this.time < 6.04)
       this.say("WASD / SETAS • mova-se. O disparo é automático.", 6);
     if (this.time > 19 && this.time < 19.04)
@@ -362,9 +439,13 @@ export class World {
         if (e.active && Math.hypot(e.x - p.x, e.y - p.y) < 14)
           this.hitEnemy(e, 100);
       if (this.boss && Math.hypot(this.boss.x - p.x, this.boss.y - p.y) < 24) {
-        this.hitBoss("left", 80);
-        this.hitBoss("right", 80);
-        this.hitBoss("core", 80);
+        if (this.boss.cars) {
+          for (let i = 0; i < 4; i++) this.hitCar(i, 80);
+        } else {
+          this.hitBoss("left", 80);
+          this.hitBoss("right", 80);
+          this.hitBoss("core", 80);
+        }
       }
       this.effect(p.x, p.y, 8, "#7cf3ff");
       this.events.push("bomb");
@@ -380,6 +461,7 @@ export class World {
       e.age += dt;
       e.y -= d.speed * dt;
       if (e.kind === "E02") e.x = e.originX + Math.sin(e.age * 1.7) * 1.3;
+      if (e.kind === "E03") e.x = e.originX + Math.sin(e.age * 0.9) * 1.1;
       e.timer -= dt;
       if (e.y > 12) {
         e.state = "FORMATION";
@@ -397,6 +479,22 @@ export class World {
             e.timer = d.warning;
             e.aimX = this.player.x;
             e.aimY = this.player.y;
+            if (e.kind === "E03") {
+              const old = this.pastPosition(0.65);
+              e.aimX = old.x;
+              e.aimY = old.y;
+              this.addLaser(
+                e.x,
+                e.y,
+                e.aimX,
+                e.aimY,
+                0.02,
+                0.6,
+                0,
+                "Raptor • mira passada",
+                e.id,
+              );
+            }
             if (e.kind === "E06") {
               this.addLaser(
                 e.x,
@@ -446,6 +544,38 @@ export class World {
           d.damage,
           d.name,
         );
+    } else if (e.kind === "E03") {
+      const dx = e.aimX - e.x,
+        dy = e.aimY - e.y,
+        len = Math.hypot(dx, dy) || 1;
+      this.pool.spawn(
+        e.x,
+        e.y - 0.7,
+        (dx / len) * 10,
+        (dy / len) * 10,
+        false,
+        d.damage,
+        d.name,
+      );
+    } else if (e.kind === "E07") {
+      for (const lane of [-6, -3, 3, 6]) {
+        const dx = lane - e.x,
+          dy = -18 - e.y,
+          len = Math.hypot(dx, dy) || 1;
+        const b = this.pool.spawn(
+          e.x,
+          e.y - 0.6,
+          (dx / len) * 6.5,
+          (dy / len) * 6.5,
+          false,
+          d.damage,
+          d.name,
+        );
+        b.style = "wide";
+        b.r = 0.34;
+      }
+    } else if (e.kind === "E08") {
+      this.spawnMine(e.x < 0 ? -4 : 4, e.y - 0.6, e.id, d.name);
     } else {
       const dx = e.aimX - e.x,
         dy = e.aimY - e.y,
@@ -495,6 +625,10 @@ export class World {
   updateBoss(dt: number) {
     const b = this.boss;
     if (!b || b.dead) return;
+    if (b.cars) {
+      updateSerpent(this, dt);
+      return;
+    }
     b.py = b.y;
     b.age += dt;
     b.y = Math.max(6.5, b.y - 2.8 * dt);
@@ -591,6 +725,7 @@ export class World {
       if (l.owner === -2 && (this.boss?.left || 0) <= 0) l.active = false;
       if (l.owner === -3 && (this.boss?.right || 0) <= 0) l.active = false;
       if (
+        l.duration > 0 &&
         l.age >= l.warn + 0.15 &&
         l.age <= l.warn + 0.15 + l.duration &&
         l.active &&
@@ -614,7 +749,37 @@ export class World {
           type: "enemy",
           enemy: e,
         });
+    for (const c of this.convoys)
+      if (c.active && c.hp > 0)
+        this.targets.insert({ ...c, type: "convoy", convoy: c });
     const b = this.boss;
+    if (b?.cars && !b.dead) {
+      b.cars.forEach((c, i) => {
+        if (c.hp > 0)
+          this.targets.insert({
+            id: c.id,
+            x: c.x,
+            y: c.y,
+            r: c.r,
+            type: "car",
+            carIndex: i,
+          });
+      });
+      for (let i = 1; i < b.cars.length; i++) {
+        const a = b.cars[i - 1],
+          c = b.cars[i];
+        if (a.hp > 0 && c.hp > 0)
+          this.targets.insert({
+            id: -120 - i,
+            x: (a.x + c.x) / 2,
+            y: (a.y + c.y) / 2,
+            r: 0.35,
+            type: "car",
+            carIndex: i,
+          });
+      }
+      return;
+    }
     if (b && !b.dead) {
       if (b.left > 0)
         this.targets.insert({
@@ -645,6 +810,7 @@ export class World {
       b.x += b.vx * dt;
       b.y += b.vy * dt;
       b.life -= dt;
+      b.arm = Math.max(0, b.arm - dt);
       if (b.life <= 0 || b.y > 19 || b.y < -18 || Math.abs(b.x) > 13) {
         b.active = false;
         continue;
@@ -654,12 +820,14 @@ export class World {
           if (overlaps(b, t)) {
             b.active = false;
             this.hits++;
-            if (t.enemy) this.hitEnemy(t.enemy, b.damage);
+            if (t.convoy) this.hitConvoy(t.convoy, b.damage);
+            else if (t.type === "car") this.hitCar(t.carIndex!, b.damage);
+            else if (t.enemy) this.hitEnemy(t.enemy, b.damage);
             else this.hitBoss(t.type as "left" | "right" | "core", b.damage);
             break;
           }
         }
-      } else this.hostiles.insert(b);
+      } else if (b.arm <= 0) this.hostiles.insert(b);
     }
     for (const b of this.hostiles.query(this.player))
       if (b.active && overlaps(b, this.player)) {
@@ -675,7 +843,23 @@ export class World {
         )
           this.hitEnemy(e, 150 * dt);
       const boss = this.boss;
-      if (boss && !boss.dead) {
+      for (const c of this.convoys)
+        if (
+          c.hp > 0 &&
+          c.y > this.player.y &&
+          Math.abs(c.x - this.player.x) < c.r + 0.45
+        )
+          this.hitConvoy(c, 150 * dt);
+      if (boss?.cars && !boss.dead) {
+        boss.cars.forEach((c, i) => {
+          if (
+            c.hp > 0 &&
+            c.y > this.player.y &&
+            Math.abs(c.x - this.player.x) < c.r + 0.45
+          )
+            this.hitCar(i, 150 * dt);
+        });
+      } else if (boss && !boss.dead) {
         for (const [kind, x] of [
           ["left", -2.6],
           ["right", 2.6],
@@ -706,6 +890,10 @@ export class World {
   }
   hitBoss(part: "left" | "right" | "core", damage: number) {
     const b = this.boss;
+    if (b?.cars) {
+      if (part === "core") this.hitCar(0, damage);
+      return;
+    }
     if (!b || b.dead || b.invul > 0 || b[part === "core" ? "hp" : part] <= 0)
       return;
     const key = part === "core" ? "hp" : part;
@@ -718,14 +906,7 @@ export class World {
       this.say("CANHÃO DESTRUÍDO • padrão lateral desativado");
     }
     if (b.hp <= 0) {
-      b.dead = true;
-      this.player.invul = 999;
-      this.pool.clear();
-      this.lasers = [];
-      this.enemies = [];
-      this.productive(10000);
-      this.splashCollect();
-      this.events.push("win");
+      this.defeatBoss();
       this.say("CORREDOR LIBERADO • Arkan está livre!", 5);
       return;
     }
@@ -741,6 +922,64 @@ export class World {
         2,
       );
       this.events.push("laser");
+    }
+  }
+  defeatBoss() {
+    const b = this.boss;
+    if (!b || b.dead) return;
+    b.dead = true;
+    this.player.invul = 999;
+    this.pool.clear();
+    this.lasers = [];
+    this.enemies = [];
+    this.convoys = [];
+    this.productive(10000);
+    this.splashCollect();
+    this.events.push("win");
+  }
+  hitCar(index: number, damage: number) {
+    if (this.boss?.cars) hitSerpent(this, index, damage);
+  }
+  pastPosition(seconds: number) {
+    return (
+      this.positionHistory.find((p) => p.time >= this.time - seconds) || {
+        x: this.player.x,
+        y: this.player.y,
+      }
+    );
+  }
+  spawnMine(x: number, y: number, owner: number, source: string) {
+    const b = this.pool.spawn(x, y, 0, -0.85, false, 20, source + " • mina");
+    b.style = "mine";
+    b.r = 0.3;
+    b.arm = 0.6;
+    b.life = 18;
+    b.owner = owner;
+    return b;
+  }
+  updateConvoys(dt: number) {
+    for (const c of this.convoys) {
+      c.px = c.x;
+      c.py = c.y;
+      c.y -= 1.3 * dt;
+      c.age += dt;
+      if (c.y < -18) {
+        c.active = false;
+        if (c.hp > 0) this.ammoEscaped++;
+      }
+    }
+    this.convoys = this.convoys.filter((c) => c.active);
+  }
+  hitConvoy(c: Convoy, damage: number) {
+    if (!c.active || c.hp <= 0) return;
+    c.hp = Math.max(0, c.hp - damage);
+    if (c.hp === 0) {
+      this.ammoDestroyed++;
+      this.productive(750);
+      this.scrap += 40;
+      this.effect(c.x, c.y, 2);
+      this.events.push("explosion");
+      this.say("VAGÃO DE MUNIÇÃO DESTRUÍDO • +40 sucatas");
     }
   }
   splashCollect() {
@@ -827,6 +1066,14 @@ export class World {
     return this.shots ? Math.min(1, this.hits / this.shots) : 0;
   }
   get segment() {
+    if (this.stageId === "M02")
+      return this.boss
+        ? "CONFRONTO • SERPENTE DE FERRO"
+        : this.time < 105
+          ? "CÂNION • INTERCEPTADORES"
+          : this.time < 200
+            ? "FERROVIA • BATERIAS ARPÃO"
+            : "DEPÓSITOS • MINAS E RESGATES";
     return this.boss
       ? "CONFRONTO • GÁRGULA-01"
       : this.time < 40

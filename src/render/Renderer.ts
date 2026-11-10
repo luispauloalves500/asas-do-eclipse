@@ -1,5 +1,7 @@
 import * as T from "three";
 import { Models } from "./Models";
+import { Canyon } from "./Canyon";
+import type { StageId } from "../data/stages";
 import { Terrain } from "./Terrain";
 import { Particles } from "./Particles";
 import { Quality } from "./Quality";
@@ -19,6 +21,11 @@ export class Renderer {
   camera = new T.OrthographicCamera(-8, 8, 14, -14, 0.1, 150);
   player: T.Group;
   boss: T.Group;
+  serpent: T.Group;
+  canyon: Canyon;
+  convoyMeshes = new Map<number, T.Group>();
+  mineRings: T.InstancedMesh;
+  stageId: StageId = "M01";
   menuShip: T.Group;
   shadow: T.Mesh;
   terrain: Terrain;
@@ -71,6 +78,9 @@ export class Renderer {
     this.models = new Models((color) => this.material(color));
     this.terrain = new Terrain((color) => this.material(color));
     this.scene.add(this.terrain);
+    this.canyon = new Canyon((color) => this.material(color));
+    this.canyon.visible = false;
+    this.scene.add(this.canyon);
     this.particles = new Particles(this.scene);
     this.groundShadows = new T.InstancedMesh(
       new T.CircleGeometry(1, 16),
@@ -118,6 +128,9 @@ export class Renderer {
     this.boss = this.makeBoss();
     this.boss.visible = false;
     this.scene.add(this.boss);
+    this.serpent = this.models.serpent();
+    this.serpent.visible = false;
+    this.scene.add(this.serpent);
     const bg = new T.CircleGeometry(0.19, 10),
       material = new T.MeshBasicMaterial({
         color: 0xffffff,
@@ -154,6 +167,19 @@ export class Renderer {
     this.outlines.renderOrder = 100;
     this.rims.renderOrder = 101;
     this.bullets.renderOrder = 102;
+    this.mineRings = new T.InstancedMesh(
+      new T.RingGeometry(0.35, 0.48, 4),
+      new T.MeshBasicMaterial({
+        color: 0xffc080,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+      }),
+      600,
+    );
+    this.mineRings.renderOrder = 103;
+    this.mineRings.frustumCulled = false;
+    this.scene.add(this.mineRings);
     this.beam = new T.Mesh(
       new T.PlaneGeometry(1, 1),
       new T.MeshBasicMaterial({
@@ -259,6 +285,11 @@ export class Renderer {
   makeBoss() {
     return this.models.boss();
   }
+  setStage(id: StageId) {
+    this.stageId = id;
+    this.terrain.visible = id === "M01";
+    this.canyon.visible = id === "M02";
+  }
   setMenu(menu: boolean) {
     if (this.menu === menu) return;
     this.menu = menu;
@@ -316,7 +347,7 @@ export class Renderer {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
     this.particles.quality = this.quality.level;
-    this.terrain.update(
+    (this.stageId === "M02" ? this.canyon : this.terrain).update(
       world && !this.menu ? world.scroll : this.menuTime * 0.55,
       this.menuTime,
       this.quality.level,
@@ -332,7 +363,8 @@ export class Renderer {
     this.menuShip.visible = this.menu;
     this.shadow.visible = !this.menu && !!world && world.player.hp > 0;
     this.player.visible = !this.menu && !!world && world.player.hp > 0;
-    this.boss.visible = !this.menu && !!world?.boss;
+    this.boss.visible = !this.menu && !!world?.boss && !world.boss.cars;
+    this.serpent.visible = !this.menu && !!world?.boss?.cars;
     if (this.menu) {
       this.menuShip.position.set(
         Math.max(3, this.camera.right * 0.36),
@@ -367,7 +399,30 @@ export class Renderer {
       );
       this.player.visible =
         p.hp > 0 && !(p.invul > 0 && Math.floor(this.menuTime * 12) % 2 === 0);
-      if (world.boss) {
+      if (world.boss?.cars) {
+        const b = world.boss;
+        this.serpent.position.set(0, 0, 2.5);
+        for (const [i, c] of b.cars!.entries()) {
+          const node = this.serpent.getObjectByName("car" + i)!;
+          node.position.set(
+            this.lerp(c.px, c.x, alpha),
+            this.lerp(c.py, c.y, alpha),
+            Math.sin(this.menuTime * 3 + i) * 0.08,
+          );
+          node.getObjectByName("intact")!.visible = c.hp > 0;
+          node.getObjectByName("wreck")!.visible = c.hp <= 0;
+          if (i < 3) {
+            const next = b.cars![i + 1],
+              joint = this.serpent.getObjectByName("joint" + i)!;
+            joint.position.set((c.x + next.x) / 2, (c.y + next.y) / 2, 0.5);
+            joint.rotation.z = Math.atan2(next.y - c.y, next.x - c.x);
+            joint.scale.x = Math.hypot(next.x - c.x, next.y - c.y);
+            joint.visible = c.hp > 0 && next.hp > 0;
+            joint.getObjectByName("weakpoint")!.scale.x = 1 / joint.scale.x;
+          }
+        }
+        this.serpent.visible = b.deathTime < 3.2;
+      } else if (world.boss) {
         const b = world.boss;
         this.boss.position.set(b.x, this.lerp(b.py, b.y, alpha), 2.5);
         this.boss.getObjectByName("leftWreck")!.visible = b.left <= 0;
@@ -384,6 +439,7 @@ export class Renderer {
         this.boss.rotation.z = b.dead ? Math.sin(b.deathTime * 15) * 0.02 : 0;
         this.boss.visible = b.deathTime < 3.2;
       }
+      this.syncConvoys(world, alpha);
       this.syncEnemies(world, alpha);
       this.syncObjects(world, alpha);
       this.syncLasers(world);
@@ -422,18 +478,46 @@ export class Renderer {
         this.shake = Math.max(this.shake, 0.035);
       }
       this.lastHP = p.hp;
-      let count = 0;
+      let count = 0,
+        mineCount = 0;
       for (const b of world.pool.items) {
         if (!b.active) continue;
         const x = this.lerp(b.px, b.x, alpha),
           y = this.lerp(b.py, b.y, alpha);
         this.dummy.position.set(x, y, 12.1);
-        this.dummy.scale.set(b.friendly ? 0.58 : 1, b.friendly ? 1.5 : 1, 1);
+        this.dummy.rotation.set(
+          0,
+          0,
+          b.style === "mine" ? this.menuTime * 2 : 0,
+        );
+        const size = b.style === "wide" ? 1.8 : b.style === "mine" ? 1.5 : 1;
+        this.dummy.scale.set(
+          b.friendly ? 0.58 : size,
+          b.friendly ? 1.5 : size,
+          1,
+        );
+        if (b.style === "mine") {
+          this.dummy.position.z = 12.3;
+          const saved = this.dummy.scale.clone();
+          this.dummy.scale.setScalar(
+            b.arm > 0 ? 1.3 + Math.sin(this.menuTime * 20) * 0.15 : 1,
+          );
+          this.dummy.updateMatrix();
+          this.mineRings.setMatrixAt(mineCount++, this.dummy.matrix);
+          this.dummy.scale.copy(saved);
+          this.dummy.position.z = 12.1;
+        }
         this.dummy.updateMatrix();
         this.bullets.setMatrixAt(count, this.dummy.matrix);
         this.bullets.setColorAt(
           count,
-          this.colors.set(b.friendly ? C.cyan : 0xff785e),
+          this.colors.set(
+            b.friendly
+              ? C.cyan
+              : b.style === "mine" && b.arm > 0
+                ? 0xffce83
+                : 0xff785e,
+          ),
         );
         this.dummy.position.z = 12;
         this.dummy.scale.multiplyScalar(1.35);
@@ -445,6 +529,9 @@ export class Renderer {
         this.outlines.setMatrixAt(count, this.dummy.matrix);
         count++;
       }
+      this.mineRings.count = mineCount;
+      this.mineRings.visible = true;
+      this.mineRings.instanceMatrix.needsUpdate = true;
       for (const m of [this.bullets, this.rims, this.outlines]) {
         m.visible = true;
         m.count = count;
@@ -456,9 +543,16 @@ export class Renderer {
       this.beam.position.set(p.x, (p.y + 15) / 2, 11);
       this.beam.scale.set(0.8, 15 - p.y, 1);
     } else {
-      for (const m of [this.bullets, this.rims, this.outlines, this.beam])
+      for (const m of [
+        this.bullets,
+        this.rims,
+        this.outlines,
+        this.beam,
+        this.mineRings,
+      ])
         m.visible = false;
       for (const maps of [
+        this.convoyMeshes,
         this.enemyMeshes,
         this.rescueMeshes,
         this.pickupMeshes,
@@ -474,6 +568,27 @@ export class Renderer {
     );
     this.renderer.render(this.scene, this.camera);
     this.renderCalls = this.renderer.info.render.calls;
+  }
+  syncConvoys(w: World, a: number) {
+    const ids = new Set(w.convoys.map((c) => c.id));
+    for (const [id, m] of this.convoyMeshes)
+      if (!ids.has(id)) {
+        this.scene.remove(m);
+        this.releaseUnique(m);
+        this.convoyMeshes.delete(id);
+      }
+    for (const c of w.convoys) {
+      let m = this.convoyMeshes.get(c.id);
+      if (!m) {
+        m = this.models.convoy();
+        this.convoyMeshes.set(c.id, m);
+        this.scene.add(m);
+      }
+      m.visible = true;
+      m.position.set(c.x, this.lerp(c.py, c.y, a), 2.2);
+      m.getObjectByName("ammo")!.visible = c.hp > 0;
+      m.getObjectByName("wreck")!.visible = c.hp <= 0;
+    }
   }
   syncEnemies(w: World, a: number) {
     const live = new Set(w.enemies.map((e) => e.id));
@@ -494,7 +609,7 @@ export class Renderer {
       m.position.set(
         this.lerp(e.px, e.x, a),
         this.lerp(e.py, e.y, a),
-        e.kind === "E05" || e.kind === "E06" ? 2.1 : 6,
+        ["E05", "E06", "E07"].includes(e.kind) ? 2.1 : 6,
       );
       m.rotation.z = e.kind === "E02" ? Math.cos(e.age * 1.7) * 0.15 : 0;
       if (m.userData.hp !== undefined && e.hp < m.userData.hp)
@@ -539,6 +654,11 @@ export class Renderer {
       if (!m) {
         m = new T.Group();
         m.add(this.ring(1.5, C.amber));
+        if (w.stageId === "M02") {
+          this.box(m, 0, 0, -0.2, 2, 1.8, 0.2, 0x695e4b);
+          for (const x of [-0.8, 0.8])
+            this.box(m, x, 0, 0, 0.15, 1.7, 0.3, 0xad9672);
+        }
         this.box(m, 0, 0, 0.3, 0.6, 0.8, 0.3, 0xe8c38c);
         this.box(m, 0, 0, 0.5, 0.15, 0.6, 0.1, C.navy);
         this.box(m, 0, 0, 0.51, 0.5, 0.15, 0.1, C.navy);
@@ -680,6 +800,7 @@ export class Renderer {
     this.lastBossHP = 600;
     this.shake = 0;
     for (const map of [
+      this.convoyMeshes,
       this.enemyMeshes,
       this.rescueMeshes,
       this.pickupMeshes,

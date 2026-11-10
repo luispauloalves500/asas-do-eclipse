@@ -1,0 +1,119 @@
+{
+  "id": "M02",
+  "title": "Estrada de Ferro Fantasma",
+  "biome": "canyon_railway",
+  "scrollSpeed": 2.5,
+  "durationTargetSeconds": 420,
+  "bossEntryAtSeconds": 345,
+  "waves": [
+    {
+      "atSeconds": 14,
+      "enemy": "E01",
+      "pattern": "CANYON_PASS",
+      "count": 4
+    },
+    {
+      "atSeconds": 30,
+      "enemy": "E03",
+      "pattern": "CANYON_PASS",
+      "count": 2
+    },
+    {
+      "atSeconds": 48,
+      "enemy": "E01",
+      "pattern": "CANYON_PASS",
+      "count": 5
+    },
+    {
+      "atSeconds": 65,
+      "enemy": "E03",
+      "pattern": "CANYON_PASS",
+      "count": 3
+    },
+    {
+      "atSeconds": 88,
+      "enemy": "E01",
+      "pattern": "CANYON_PASS",
+      "count": 4
+    },
+    {
+      "atSeconds": 106,
+      "enemy": "E05",
+      "pattern": "CANYON_PASS",
+      "count": 2
+    },
+    {
+      "atSeconds": 120,
+      "enemy": "E07",
+      "pattern": "CANYON_PASS",
+      "count": 1
+    },
+    {
+      "atSeconds": 146,
+      "enemy": "E05",
+      "pattern": "CANYON_PASS",
+      "count": 2
+    },
+    {
+      "atSeconds": 161,
+      "enemy": "E07",
+      "pattern": "CANYON_PASS",
+      "count": 2
+    },
+    {
+      "atSeconds": 184,
+      "enemy": "E07",
+      "pattern": "CANYON_PASS",
+      "count": 2
+    },
+    {
+      "atSeconds": 202,
+      "enemy": "E08",
+      "pattern": "MINE_RAILS",
+      "count": 2
+    },
+    {
+      "atSeconds": 243,
+      "enemy": "E08",
+      "pattern": "MINE_RAILS",
+      "count": 2
+    },
+    {
+      "atSeconds": 284,
+      "enemy": "E08",
+      "pattern": "MINE_RAILS",
+      "count": 2
+    },
+    {
+      "atSeconds": 326,
+      "enemy": "E08",
+      "pattern": "MINE_RAILS",
+      "count": 2
+    }
+  ],
+  "rescues": [
+    {
+      "atSeconds": 218,
+      "laneX": -5.4
+    },
+    {
+      "atSeconds": 266,
+      "laneX": 5.4
+    },
+    {
+      "atSeconds": 310,
+      "laneX": 0
+    }
+  ],
+  "repairAtSeconds": 190,
+  "convoys": [
+    {
+      "atSeconds": 130,
+      "laneX": -3.8
+    },
+    {
+      "atSeconds": 240,
+      "laneX": 3.8
+    }
+  ]
+}

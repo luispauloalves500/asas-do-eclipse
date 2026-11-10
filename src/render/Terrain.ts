@@ -1,4 +1,5 @@
 import * as T from "three";
+import { tileOffset } from "../core/Scrolling";
 /** Two seamless 56-unit tiles; all environmental detail uses instanced primitive batches. */
 export class Terrain extends T.Group {
   time = { value: 0 };
@@ -285,7 +286,7 @@ export class Terrain extends T.Group {
   update(scroll: number, time: number, quality: number, visibleHeight = 28) {
     this.time.value = time;
     this.tiles.forEach((g, i) => {
-      g.position.y = ((((i * 56 - scroll + 28) % 112) + 112) % 112) - 28;
+      g.position.y = tileOffset(i, scroll);
       g.visible = Math.abs(g.position.y) < (56 + visibleHeight) / 2 + 2;
     });
     this.clouds.count = Math.round(24 * quality);
