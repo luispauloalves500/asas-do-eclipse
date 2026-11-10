@@ -1,0 +1,43 @@
+{
+  "checks": [
+    "Normal build loads under /jogos/asas/; debug API absent",
+    "v0.2: no side panel DOM; Three.js canvas fills 1600x900",
+    "Real keyboard WASD/arrows movement",
+    "Pause freezes time and player; controls modal returns to pause",
+    "Real mouse relative drag",
+    "Special and bomb key actions consume one charge",
+    "Standard gamepad axes and Start edge action",
+    "20 restart UI cycles: HP reset, fresh timeline, <=1 engine loop, stable geometry count",
+    "Damage-enabled idle defeat report -> retry",
+    "Paid motor upgrade persists after reload; speed changes from 8.2 to 8.446 (fixture-funded)",
+    "Boss debug entry renders and runs without runtime errors",
+    "390x844 mobile: real CDP touch relative drag and visible controls",
+    "Standalone HTML opens via file:// and plays with zero network dependencies"
+  ],
+  "errors": [],
+  "maxDrawCalls": 88,
+  "geometryCounts": [
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58,
+    58
+  ],
+  "browser": "158.0.8127.18",
+  "viewport": "1600x900 + 390x844"
+}

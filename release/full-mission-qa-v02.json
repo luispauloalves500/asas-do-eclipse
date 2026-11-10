@@ -1,0 +1,129 @@
+{
+  "mode": "Accelerated fixed-step, real inputs, damage enabled, no profile rewards",
+  "errors": [],
+  "steps": 7200,
+  "minHP": 100,
+  "phases": [
+    1,
+    2,
+    3
+  ],
+  "enemies": [
+    "E01",
+    "E02",
+    "E05",
+    "E06"
+  ],
+  "repairSeen": true,
+  "state": {
+    "screen": "game",
+    "paused": true,
+    "state": "victory",
+    "time": 356.70000000000425,
+    "player": {
+      "id": 0,
+      "x": -1.9260867838966855,
+      "y": -5.107070249131982,
+      "px": -1.9260867838966855,
+      "py": -5.107070249131982,
+      "vx": 0,
+      "vy": 0,
+      "r": 0.33,
+      "hp": 100,
+      "maxHp": 100,
+      "invul": 999,
+      "fire": 0.13333333333339273,
+      "bombs": 2,
+      "specials": 0,
+      "beam": 0
+    },
+    "boss": {
+      "x": 0,
+      "y": 6.5,
+      "py": 6.5,
+      "hp": 0,
+      "left": 0,
+      "right": 0,
+      "phase": 3,
+      "invul": 0,
+      "age": 16.716666666667,
+      "cycle": 2.8166666666666718,
+      "dead": true,
+      "deathTime": 3.516666666666659
+    },
+    "enemies": [],
+    "rescues": [
+      {
+        "id": 30,
+        "x": -3.2,
+        "y": 6.951999999999963,
+        "px": -3.2,
+        "py": 6.963999999999962,
+        "progress": 1,
+        "active": false,
+        "age": 4.233333333333324,
+        "rescued": true
+      },
+      {
+        "id": 39,
+        "x": 3,
+        "y": 6.8439999999999666,
+        "px": 3,
+        "py": 6.855999999999966,
+        "progress": 1,
+        "active": false,
+        "age": 4.383333333333323,
+        "rescued": true
+      },
+      {
+        "id": 74,
+        "x": 0,
+        "y": 6.615999999999975,
+        "px": 0,
+        "py": 6.627999999999974,
+        "progress": 1,
+        "active": false,
+        "age": 4.699999999999989,
+        "rescued": true
+      }
+    ],
+    "bullets": [],
+    "pickups": [],
+    "lasers": [],
+    "score": 12770,
+    "scrap": 90,
+    "drawCalls": 61,
+    "memory": {
+      "geometries": 56,
+      "textures": 1
+    },
+    "visual": {
+      "version": "0.2.0",
+      "quality": 1,
+      "viewport": {
+        "scale": 32.142857142857146,
+        "fieldWidth": 514.2857142857143,
+        "fieldHeight": 900.0000000000001,
+        "worldWidth": 49.77777777777777,
+        "worldHeight": 27.999999999999996
+      }
+    },
+    "save": {
+      "schemaVersion": 2,
+      "scrap": 0,
+      "upgrades": {
+        "motor": 0,
+        "canhao": 0,
+        "ima": 0
+      },
+      "cleared": false,
+      "bestScore": 0,
+      "medals": [],
+      "settings": {
+        "sound": true
+      },
+      "attempts": 0
+    },
+    "loops": 0
+  }
+}
