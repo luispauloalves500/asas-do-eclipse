@@ -19,10 +19,14 @@ const result = await page.evaluate(() => {
   let steps = 0,
     lastTarget = 0,
     seen = new Set(),
+    seenEnemies = new Set(),
+    repairSeen = false,
     minHP = 100;
   while (steps++ < 16000) {
     const s = qa.state(),
       p = s.player;
+    for (const e of s.enemies) seenEnemies.add(e.kind);
+    if (s.pickups.some((p) => p.kind === "repair")) repairSeen = true;
     if (s.state !== "playing" && s.state !== "dying") break;
     let tx = 6.7,
       ty = -8;
@@ -117,13 +121,22 @@ const result = await page.evaluate(() => {
     qa.step(3, { x: best[0], y: best[1], bomb, special });
     minHP = Math.min(minHP, p.hp);
   }
-  return { steps, minHP, phases: [...seen], state: qa.state() };
+  return {
+    steps,
+    minHP,
+    phases: [...seen],
+    enemies: [...seenEnemies],
+    repairSeen,
+    state: qa.state(),
+  };
 });
 assert.equal(result.state.state, "victory");
 assert.equal(result.state.boss.left, 0);
 assert.equal(result.state.boss.right, 0);
 assert.equal(result.state.rescues.filter((r) => r.rescued).length, 3);
 assert.deepEqual(result.phases, [1, 2, 3]);
+assert.deepEqual(result.enemies.sort(), ["E01", "E02", "E05", "E06"]);
+assert.equal(result.repairSeen, true);
 assert.deepEqual(errors, []);
 writeFileSync(
   "release/full-mission-qa.json",

@@ -1,0 +1,118 @@
+{
+  "mode": "Accelerated fixed-step, real inputs, damage enabled, no profile rewards",
+  "errors": [],
+  "steps": 7203,
+  "minHP": 100,
+  "phases": [
+    1,
+    2,
+    3
+  ],
+  "enemies": [
+    "E01",
+    "E02",
+    "E05",
+    "E06"
+  ],
+  "repairSeen": true,
+  "state": {
+    "screen": "game",
+    "paused": true,
+    "state": "victory",
+    "time": 356.7166666666709,
+    "player": {
+      "id": 0,
+      "x": 1.3798859804290575,
+      "y": -4.984719095984448,
+      "px": 1.3798859804290575,
+      "py": -4.984719095984448,
+      "vx": 0,
+      "vy": 0,
+      "r": 0.33,
+      "hp": 100,
+      "maxHp": 100,
+      "invul": 999,
+      "fire": 0.11666666666672607,
+      "bombs": 2,
+      "specials": 0,
+      "beam": 0
+    },
+    "boss": {
+      "x": 0,
+      "y": 6.5,
+      "py": 6.5,
+      "hp": 0,
+      "left": 0,
+      "right": 0,
+      "phase": 3,
+      "invul": 0,
+      "age": 16.733333333333665,
+      "cycle": 2.800000000000005,
+      "dead": true,
+      "deathTime": 3.516666666666659
+    },
+    "enemies": [],
+    "rescues": [
+      {
+        "id": 30,
+        "x": -3.2,
+        "y": 6.903999999999964,
+        "px": -3.2,
+        "py": 6.915999999999964,
+        "progress": 1,
+        "active": false,
+        "age": 4.29999999999999,
+        "rescued": true
+      },
+      {
+        "id": 39,
+        "x": 3,
+        "y": 7.047999999999959,
+        "px": 3,
+        "py": 7.059999999999959,
+        "progress": 1,
+        "active": false,
+        "age": 4.099999999999991,
+        "rescued": true
+      },
+      {
+        "id": 74,
+        "x": 0,
+        "y": 6.615999999999975,
+        "px": 0,
+        "py": 6.627999999999974,
+        "progress": 1,
+        "active": false,
+        "age": 4.699999999999989,
+        "rescued": true
+      }
+    ],
+    "bullets": [],
+    "pickups": [],
+    "lasers": [],
+    "score": 12775,
+    "scrap": 90,
+    "drawCalls": 32,
+    "memory": {
+      "geometries": 27,
+      "textures": 1
+    },
+    "save": {
+      "schemaVersion": 2,
+      "scrap": 0,
+      "upgrades": {
+        "motor": 0,
+        "canhao": 0,
+        "ima": 0
+      },
+      "cleared": false,
+      "bestScore": 0,
+      "medals": [],
+      "settings": {
+        "sound": true
+      },
+      "attempts": 0
+    },
+    "loops": 0
+  }
+}
