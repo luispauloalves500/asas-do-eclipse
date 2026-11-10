@@ -12,11 +12,13 @@
     "build:single": "vite build --mode single",
     "test": "vitest run",
     "preview": "vite preview --host 0.0.0.0",
-    "test:e2e": "node e2e/smoke.mjs"
+    "test:e2e": "node e2e/smoke.mjs",
+    "release": "npm test && npm run build && npm run build:single && node tools/package.mjs",
+    "format": "prettier --write src e2e tools vite.config.ts tsconfig.json index.html"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "type": "module",
   "dependencies": {
     "three": "^0.187.0"
@@ -24,9 +26,11 @@
   "devDependencies": {
     "@types/three": "^0.187.0",
     "playwright": "^1.65.0",
+    "prettier": "^3.9.10",
     "typescript": "^7.0.2",
     "vite": "^8.3.7",
     "vite-plugin-singlefile": "^2.3.4",
     "vitest": "^5.1.0"
-  }
+  },
+  "private": true
 }
