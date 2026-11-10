@@ -3,11 +3,14 @@ export interface Commands {
   y: number;
   special: boolean;
   bomb: boolean;
+  posture?: boolean;
+  fire?: boolean;
 }
 export class InputRouter {
   keys = new Set<string>();
   special = false;
   bomb = false;
+  posture = false;
   pointer: { id: number; x: number; y: number } | null = null;
   dragX = 0;
   dragY = 0;
@@ -35,6 +38,7 @@ export class InputRouter {
         if (["Escape", "p", "P"].includes(e.key)) this.pause();
         if (e.key === "Shift") this.special = true;
         if (e.key.toLowerCase() === "e") this.bomb = true;
+        if (e.key.toLowerCase() === "q") this.posture = true;
       }
       this.keys.add(e.key.toLowerCase());
     });
@@ -77,9 +81,22 @@ export class InputRouter {
   clear() {
     this.keys.clear();
     this.pointerEngaged = this.pointerDriven = false;
-    this.special = this.bomb = false;
+    this.special = this.bomb = this.posture = false;
     this.pointer = null;
     this.dragX = this.dragY = 0;
+  }
+  rumble() {
+    if (navigator.vibrate) navigator.vibrate(18);
+    const p = navigator.getGamepads?.()[0] as any;
+    try {
+      p?.vibrationActuator
+        ?.playEffect("dual-rumble", {
+          duration: 70,
+          strongMagnitude: 0.2,
+          weakMagnitude: 0.3,
+        })
+        ?.catch(() => {});
+    } catch {}
   }
   consumeDrag(dx: number, dy: number, x: number, y: number) {
     if (!this.pointerDriven) return;
@@ -119,6 +136,7 @@ export class InputRouter {
       for (const [i, action] of [
         [0, "special"],
         [1, "bomb"],
+        [4, "posture"],
         [9, "pause"],
       ] as const) {
         if (pad.buttons[i]?.pressed && !this.padButtons[i]) {
@@ -145,8 +163,15 @@ export class InputRouter {
       x /= len;
       y /= len;
     }
-    const result = { x, y, special: this.special, bomb: this.bomb };
-    this.special = this.bomb = false;
+    const result = {
+      x,
+      y,
+      special: this.special,
+      bomb: this.bomb,
+      posture: this.posture,
+      fire: k.has(" ") || !!this.pointer || !!pad?.buttons[7]?.pressed,
+    };
+    this.special = this.bomb = this.posture = false;
     return result;
   }
 }

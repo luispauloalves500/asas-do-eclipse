@@ -1,5 +1,5 @@
 import { mkdirSync } from "node:fs";
-mkdirSync("release/screenshots/v0.3", { recursive: true });
+mkdirSync("release/screenshots/v0.4", { recursive: true });
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
 import assert from "node:assert/strict";
@@ -141,7 +141,7 @@ assert.deepEqual(result.enemies.sort(), ["E01", "E02", "E05", "E06"]);
 assert.equal(result.repairSeen, true);
 assert.deepEqual(errors, []);
 writeFileSync(
-  "release/full-m01-qa-v03.json",
+  "release/full-m01-qa-v04.json",
   JSON.stringify(
     {
       mode: "Accelerated fixed-step, real inputs, damage enabled, no profile rewards",
@@ -168,5 +168,5 @@ console.log(
   ),
 );
 await page.waitForTimeout(500);
-await page.screenshot({ path: "release/screenshots/v0.3/04-m01-result.png" });
+await page.screenshot({ path: "release/screenshots/v0.4/04-m01-result.png" });
 await browser.close();

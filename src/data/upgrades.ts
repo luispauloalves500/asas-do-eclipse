@@ -1,4 +1,16 @@
 export const upgrades = {
+  cadencia: {
+    name: "Sincronizador de disparo",
+    max: 5,
+    description: "+6% de cadência por nível",
+    effect: (n: number) => `${(6 * (1 + 0.06 * n)).toFixed(2)} tiros/s`,
+  },
+  blindagem: {
+    name: "Blindagem laminada",
+    max: 5,
+    description: "+10 HP por nível",
+    effect: (n: number) => `${100 + 10 * n} HP`,
+  },
   motor: {
     name: "Motor de íons",
     max: 4,

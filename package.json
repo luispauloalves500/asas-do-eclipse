@@ -1,7 +1,7 @@
 {
   "name": "asas-do-eclipse",
-  "version": "0.3.0",
-  "description": "Fatia vertical original de Asas do Eclipse — M01",
+  "version": "0.4.0",
+  "description": "Campanha original de Asas do Eclipse — M01, M02 e M03",
   "main": "index.js",
   "directories": {
     "doc": "docs"

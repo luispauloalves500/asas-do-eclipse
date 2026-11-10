@@ -57,7 +57,7 @@ describe("Roteiro M02", () => {
   });
 });
 describe("Campanha e saves legados", () => {
-  it("M02 exige apenas vitória de M01, não medalhas opcionais; M03 segue em produção", () => {
+  it("M02 exige apenas vitória de M01, não medalhas opcionais; M03 desbloqueia após M02 e M04 segue em produção", () => {
     const s = fresh();
     expect(available(s, "M02")).toBe(false);
     completeAttempt(s, "M01", false, 100, []);
@@ -65,7 +65,8 @@ describe("Campanha e saves legados", () => {
     completeAttempt(s, "M01", true, 200, ["clear"]);
     expect(available(s, "M02")).toBe(true);
     completeAttempt(s, "M02", true, 500, ["clear"]);
-    expect(available(s, "M03")).toBe(false);
+    expect(available(s, "M03")).toBe(true);
+    expect(available(s, "M04")).toBe(false);
     expect(record(s, "M01").bestScore).toBe(200);
     expect(record(s, "M02").bestScore).toBe(500);
   });
@@ -150,7 +151,7 @@ describe("Serpente de Ferro modular", () => {
       c = b.cars![1];
     w.pool.spawn((a.x + c.x) / 2, (a.y + c.y) / 2, 0, 0, true, 10, "teste");
     w.updateProjectiles(1 / 60);
-    expect(c.hp).toBe(190);
+    expect(c.hp).toBe(188); // Rasante: +20% contra a junta terrestre
     expect(b.hp).toBe(900);
   });
   it("aviso sem duração nunca causa dano, mesmo no limite exato", () => {

@@ -14,8 +14,11 @@ export interface Bullet {
   source: string;
   life: number;
   arm: number;
-  style: "round" | "wide" | "mine";
+  style: "round" | "wide" | "mine" | "missile";
   owner: number;
+  hazard: "universal" | "ground_only";
+  homing: number;
+  dodged: boolean;
 }
 export class BulletPool {
   items: Bullet[] = Array.from({ length: 600 }, (_, i) => ({
@@ -36,6 +39,9 @@ export class BulletPool {
     arm: 0,
     style: "round",
     owner: 0,
+    hazard: "universal",
+    homing: 0,
+    dodged: false,
   }));
   spawn(
     x: number,
@@ -66,6 +72,9 @@ export class BulletPool {
       arm: 0,
       style: "round",
       owner: 0,
+      hazard: "universal",
+      homing: 0,
+      dodged: false,
     });
     return b;
   }

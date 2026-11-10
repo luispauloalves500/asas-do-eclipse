@@ -1,0 +1,93 @@
+{
+  "id": "M03",
+  "title": "Fortaleza do Vento",
+  "biome": "mountain_fortress",
+  "scrollSpeed": 2.25,
+  "durationTargetSeconds": 460,
+  "bossEntryAtSeconds": 350,
+  "waves": [
+    {
+      "atSeconds": 95,
+      "enemy": "E03",
+      "pattern": "WIND_FORTRESS",
+      "count": 2
+    },
+    {
+      "atSeconds": 116,
+      "enemy": "E04",
+      "pattern": "RIDGE_DASH",
+      "count": 2
+    },
+    {
+      "atSeconds": 142,
+      "enemy": "E03",
+      "pattern": "WIND_FORTRESS",
+      "count": 3
+    },
+    {
+      "atSeconds": 165,
+      "enemy": "E04",
+      "pattern": "RIDGE_DASH",
+      "count": 2
+    },
+    {
+      "atSeconds": 189,
+      "enemy": "E04",
+      "pattern": "RIDGE_DASH",
+      "count": 3
+    },
+    {
+      "atSeconds": 212,
+      "enemy": "E06",
+      "pattern": "WIND_FORTRESS",
+      "count": 2
+    },
+    {
+      "atSeconds": 232,
+      "enemy": "E10",
+      "pattern": "WIND_FORTRESS",
+      "count": 1
+    },
+    {
+      "atSeconds": 253,
+      "enemy": "E06",
+      "pattern": "WIND_FORTRESS",
+      "count": 2
+    },
+    {
+      "atSeconds": 275,
+      "enemy": "E10",
+      "pattern": "WIND_FORTRESS",
+      "count": 2
+    },
+    {
+      "atSeconds": 296,
+      "enemy": "E06",
+      "pattern": "WIND_FORTRESS",
+      "count": 2
+    },
+    {
+      "atSeconds": 320,
+      "enemy": "E10",
+      "pattern": "WIND_FORTRESS",
+      "count": 1
+    },
+    {
+      "atSeconds": 335,
+      "enemy": "E06",
+      "pattern": "WIND_FORTRESS",
+      "count": 2
+    }
+  ],
+  "rescues": [
+    {
+      "atSeconds": 236,
+      "laneX": -5.4
+    },
+    {
+      "atSeconds": 305,
+      "laneX": 5.4
+    }
+  ],
+  "repairAtSeconds": 288
+}

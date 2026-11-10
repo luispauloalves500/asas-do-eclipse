@@ -1188,3 +1188,879 @@ a {
     font-size: 30px;
   }
 }
+/* v0.4 — readable cinematic presentation; gameplay still has no side panels. */
+.hangar-v4,
+.briefing-v4,
+.options-v4 {
+  position: absolute;
+  pointer-events: auto;
+  inset: 13vh 6vw 7vh;
+  max-width: 1420px;
+  margin: auto;
+}
+.hangar-v4 {
+  display: grid;
+  grid-template-columns: 190px minmax(250px, 1fr) minmax(300px, 360px);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 22px 24px;
+}
+.hangar-v4 > header {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+}
+.hangar-v4 h2 {
+  font-size: 38px;
+}
+.hangar-v4 .back {
+  margin-bottom: 12px;
+}
+.hangar-v4 .eyebrow {
+  margin-bottom: 9px;
+}
+.balance small {
+  display: block;
+  font: 9px monospace;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  margin-top: 6px;
+}
+.aircraft-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.aircraft-card {
+  text-align: left;
+  background: #0b2634d9;
+  padding: 16px;
+  border-color: #95adba4d;
+}
+.aircraft-card.selected {
+  border-color: var(--gold);
+  background: #415248ac;
+}
+.aircraft-card b {
+  display: block;
+  font-size: 21px;
+  margin: 10px 0;
+}
+.aircraft-card span {
+  font-size: 11px;
+  color: #b8cdce;
+}
+.aircraft-list p {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #c2d4cf;
+  margin: 10px 0;
+}
+.aircraft-list .primary {
+  font-size: 11px;
+  margin-top: auto;
+}
+.ship-window {
+  position: relative;
+  min-height: 280px;
+  border: 1px solid #abd5d52b;
+  background: linear-gradient(180deg, #102c3d28, transparent 45%, #09202a75);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.preview-title {
+  position: absolute;
+  top: 20px;
+  left: 22px;
+  right: 20px;
+}
+.preview-title h3 {
+  font-size: 30px;
+  letter-spacing: 0.1em;
+  margin: 8px 0;
+}
+.preview-title p {
+  font-size: 11px;
+  max-width: 270px;
+  color: #c4d4d2;
+  line-height: 1.6;
+}
+.ship-stats {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 20px;
+  background: #0b2437c9;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  border-top: 1px solid #b1cbc82d;
+}
+.ship-stats span {
+  display: block;
+  font: 9px monospace;
+  letter-spacing: 0.1em;
+  color: #adc3c8;
+  text-transform: uppercase;
+}
+.ship-stats b {
+  display: block;
+  margin-top: 6px;
+  font-size: 17px;
+  color: #e8f6f1;
+}
+.upgrade-tree {
+  overflow: auto;
+  padding-right: 7px;
+  scrollbar-color: #507d81 #102a32;
+}
+.upgrade-card {
+  padding: 16px 18px;
+  background: #0b2531e8;
+  border: 1px solid #86b4b138;
+  margin-bottom: 12px;
+}
+.upgrade-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+.upgrade-heading h3 {
+  font-size: 15px;
+}
+.upgrade-heading span {
+  font: 11px monospace;
+  color: var(--gold);
+}
+.upgrade-card p {
+  font-size: 11px;
+  color: #c0d0c9;
+  margin: 8px 0 12px;
+}
+.level-track {
+  display: flex;
+  gap: 4px;
+  margin: 12px 0;
+}
+.level-track i {
+  height: 4px;
+  flex: 1;
+  background: #8caaa530;
+}
+.level-track .on {
+  background: var(--cyan);
+}
+.stat-comparison {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  align-items: center;
+  margin: 13px 0;
+}
+.upgrade-card button {
+  width: 100%;
+  font-size: 11px;
+  min-height: 40px;
+  padding: 9px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.upgrade-card button small {
+  margin: 0;
+  font-size: 11px;
+  color: var(--gold);
+}
+.economy-note {
+  font-size: 10px;
+  color: #afc5c3;
+  line-height: 1.8;
+  margin: 15px 0;
+}
+.briefing-v4 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7vw;
+  overflow: auto;
+}
+.briefing-copy {
+  max-width: 560px;
+}
+.briefing-copy > .back {
+  margin-bottom: 20px;
+}
+.briefing-copy > .eyebrow {
+  margin-bottom: 14px;
+}
+.briefing-copy h2 {
+  font-size: clamp(35px, 3.5vw, 54px);
+}
+.briefing-copy > p {
+  font-size: 14px;
+  line-height: 1.85;
+  color: #d2ded7;
+  margin: 22px 0;
+}
+.briefing-facts {
+  display: flex;
+  gap: 50px;
+  margin: 25px 0;
+}
+.briefing-facts small {
+  display: block;
+  font: 10px monospace;
+  color: #b8cece;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.briefing-facts b {
+  display: block;
+  margin-top: 8px;
+  font-size: 15px;
+}
+.briefing-copy .objectives {
+  margin: 25px 0;
+  background: #0c2832c9;
+  padding: 20px;
+  border-left: 2px solid var(--gold);
+}
+.objectives p {
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 8px 0;
+}
+.briefing-threats p {
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 7px 0 24px;
+}
+.intel-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.intel-window {
+  height: 300px;
+  border: 1px solid #9ac6ca32;
+  background: linear-gradient(#aecdd410, #162c3420);
+  position: relative;
+}
+.intel-window > .label {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  font-size: 10px;
+}
+.boss-intel {
+  padding: 25px;
+  background: #0b2535de;
+  border: 1px solid #839da840;
+}
+.boss-intel h3 {
+  font-size: 26px;
+  margin: 12px 0 15px;
+}
+.boss-intel p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #d5e1df;
+}
+.boss-intel small {
+  display: block;
+  font-size: 10px;
+  line-height: 1.7;
+  color: #91b9ba;
+  margin-top: 18px;
+}
+.options-v4 {
+  max-width: 830px;
+  overflow: auto;
+  padding: 30px 35px;
+  background: #102a36ef;
+  border: 1px solid #84aaa54d;
+}
+.options-content h2 {
+  font-size: 36px;
+  margin: 12px 0 25px;
+}
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.settings-grid fieldset {
+  border: 1px solid #b3cfca33;
+  padding: 20px;
+  min-width: 0;
+  margin: 0;
+}
+.settings-grid legend {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  padding: 0 8px;
+}
+.range-option {
+  display: block;
+  margin: 7px 0 24px;
+  font-size: 12px;
+}
+.range-option span {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.range-option output {
+  color: var(--cyan);
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+.switch-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 10px 0 20px;
+}
+.switch-option input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--gold);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.select-option {
+  font-size: 12px;
+  display: block;
+}
+.select-option select {
+  display: block;
+  margin: 12px 0 18px;
+  padding: 10px;
+  width: 100%;
+  background: #173a49;
+  color: #e6efec;
+  border: 1px solid #8fb2af77;
+}
+.settings-grid small {
+  font-size: 10px;
+  line-height: 1.8;
+  color: #adc5c3;
+  display: block;
+}
+.controls-summary {
+  font-size: 11px;
+  line-height: 1.9;
+  color: #c7d7cf;
+  margin: 25px 0;
+}
+.dialog:has(.settings-grid) {
+  width: 780px;
+  padding: 28px;
+}
+.dialog .options-content p {
+  font-size: 11px;
+}
+.dialog .settings-grid {
+  gap: 12px;
+}
+.hud-top b {
+  font-size: 16px;
+}
+.hud-top .score > b {
+  font-size: 21px;
+}
+.hud-top .label {
+  font-size: 9px;
+}
+.flight-strip {
+  font-size: 9px;
+}
+.hud-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1.12fr 1fr;
+  gap: 7px;
+  left: 12px;
+  right: 12px;
+}
+.hud-bottom button {
+  min-width: 0;
+  padding: 10px 9px;
+  font-size: 10px;
+  min-height: 62px;
+}
+.hud-bottom button b {
+  font-size: 15px;
+  margin-left: 4px;
+}
+.hud-bottom small {
+  font-size: 8px;
+  letter-spacing: 0.03em;
+}
+.hud-bottom .posture-button {
+  border-color: #f0c87c99;
+  background: #463b2ab0;
+}
+.hud-bottom .posture-button b {
+  display: block;
+  float: none;
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+.hud-bottom .posture-button.high {
+  border-color: #72e7f0aa;
+  background: #194d5eac;
+}
+.posture-button.high b {
+  color: var(--cyan);
+}
+.radio {
+  font-size: 11px;
+  line-height: 1.55;
+  bottom: 98px;
+}
+.boss-hud {
+  top: 84px;
+  left: 12px;
+  right: 12px;
+  border-color: #df8a6a69;
+  background: #102530e6;
+}
+.boss-hud .boss-name {
+  font-size: 11px;
+  align-items: center;
+  letter-spacing: 0.06em;
+}
+.phase-dots {
+  display: flex;
+  gap: 5px;
+}
+.phase-dots i {
+  font: 9px monospace;
+  font-style: normal;
+  border: 1px solid #76979a66;
+  border-radius: 50%;
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  color: #9ab4b4;
+}
+.phase-dots .current {
+  background: #e8b66a;
+  color: #13232c;
+  border-color: #e8b66a;
+}
+.boss-hud .main-boss-bar {
+  height: 7px;
+  margin: 7px 0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.boss-hud .main-boss-bar i {
+  background: linear-gradient(90deg, #d56065, #ffb08a);
+  transition: width 0.08s linear;
+}
+.part-bars {
+  font-size: 8px;
+  gap: 8px;
+}
+.part-bars .bar {
+  height: 3px;
+  margin: 4px 0;
+}
+.part-bars .destroyed {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.boss-status {
+  font: 7px monospace;
+  color: #b9cfc7;
+  letter-spacing: 0.06em;
+  margin-top: 7px;
+}
+.boss-alert {
+  position: absolute;
+  top: 32%;
+  left: 0;
+  right: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #341f24ed 18%,
+    #341f24ed 82%,
+    transparent
+  );
+  border-block: 1px solid #eea87e88;
+  text-align: center;
+  padding: 16px 0;
+  pointer-events: none;
+}
+.boss-alert small {
+  display: block;
+  font: 9px monospace;
+  color: #e6b59a;
+  letter-spacing: 0.16em;
+}
+.boss-alert strong {
+  display: block;
+  font-size: 44px;
+  letter-spacing: 0.25em;
+  color: #ffd4a0;
+  margin: 8px 0;
+}
+.boss-alert span {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+}
+.safe-zone {
+  position: absolute;
+  top: 22%;
+  left: 10%;
+  right: 10%;
+  background: #0e3c43db;
+  border: 1px solid #79d4cb88;
+  padding: 20px;
+  text-align: center;
+  overflow: hidden;
+}
+.safe-zone b {
+  display: block;
+  color: var(--cyan);
+  font-size: 21px;
+  letter-spacing: 0.12em;
+}
+.safe-zone span {
+  display: block;
+  font-size: 11px;
+  margin-top: 9px;
+  color: #dfefe2;
+}
+.safe-zone i {
+  display: block;
+  height: 3px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  background: #7ae3cf;
+}
+.report {
+  width: 720px;
+}
+.report h2 {
+  font-size: 40px;
+}
+.report .stats-grid {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+.report .stat-item b {
+  font-size: 23px;
+}
+.report .medals {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.report .medal {
+  padding: 12px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.report .medal small {
+  display: block;
+  font-size: 10px;
+  margin-top: 5px;
+  color: #a6bdb5;
+}
+.report .medal.earned small {
+  color: #e1c79f;
+}
+.aircraft-reward {
+  padding: 16px 20px;
+  background: #1d58634d;
+  border: 1px solid #68cfce88;
+  color: var(--cyan);
+  font-size: 14px;
+  margin: 20px 0;
+}
+.aircraft-reward small {
+  display: block;
+  font-size: 10px;
+  color: #c3dacc;
+  margin-top: 7px;
+}
+.report .label {
+  font-size: 9px;
+}
+@media (max-width: 1000px) {
+  .hangar-v4 {
+    grid-template-columns: 155px minmax(180px, 1fr) 300px;
+    gap: 15px;
+  }
+  .hangar-v4 h2 {
+    font-size: 30px;
+  }
+  .briefing-v4 {
+    gap: 4vw;
+  }
+  .briefing-copy h2 {
+    font-size: 36px;
+  }
+  .briefing-copy > p {
+    font-size: 12px;
+  }
+  .intel-window {
+    height: 250px;
+  }
+  .preview-title {
+    left: 15px;
+  }
+  .preview-title h3 {
+    font-size: 23px;
+  }
+}
+@media (max-width: 850px) {
+  .hangar-v4,
+  .briefing-v4,
+  .options-v4 {
+    inset: 12vh 5vw 6vh;
+    overflow: auto;
+  }
+  .hangar-v4 {
+    display: block;
+  }
+  .hangar-v4 > header {
+    display: flex;
+    margin-bottom: 20px;
+    gap: 12px;
+  }
+  .hangar-v4 h2 {
+    font-size: 29px;
+  }
+  .hangar-v4 .balance {
+    font-size: 23px;
+  }
+  .aircraft-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .aircraft-list > .label {
+    grid-column: 1/-1;
+  }
+  .aircraft-card {
+    padding: 14px;
+  }
+  .aircraft-card b {
+    font-size: 21px;
+  }
+  .aircraft-list p {
+    grid-column: 1/-1;
+    margin: 3px 0;
+  }
+  .aircraft-list > .primary {
+    grid-column: 1/-1;
+  }
+  .ship-window {
+    height: 340px;
+    margin: 20px 0;
+  }
+  .preview-title h3 {
+    font-size: 27px;
+  }
+  .upgrade-tree {
+    overflow: visible;
+  }
+  .upgrade-card {
+    padding: 18px;
+  }
+  .briefing-v4 {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .briefing-copy {
+    max-width: 100%;
+  }
+  .briefing-copy > .back {
+    margin-bottom: 14px;
+  }
+  .briefing-copy > .eyebrow {
+    font-size: 10px;
+  }
+  .briefing-copy h2 {
+    font-size: 38px;
+  }
+  .briefing-copy > p {
+    font-size: 13px;
+  }
+  .briefing-facts {
+    gap: 30px;
+  }
+  .intel-window {
+    height: 230px;
+  }
+  .options-v4 {
+    padding: 25px;
+  }
+  .settings-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .settings-grid fieldset {
+    padding: 18px;
+  }
+  .dialog .settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .hud-bottom {
+    left: 9px;
+    right: 9px;
+    gap: 5px;
+  }
+  .hud-bottom button {
+    font-size: 9px;
+    padding: 9px 7px;
+  }
+  .hud-bottom button b {
+    font-size: 14px;
+  }
+  .hud-bottom small {
+    font-size: 7px;
+  }
+  .hud-bottom .posture-button b {
+    font-size: 11px;
+  }
+  .hud-top b {
+    font-size: 14px;
+  }
+  .hud-top .score > b {
+    font-size: 19px;
+  }
+  .hud-top .label {
+    font-size: 8px;
+  }
+  .flight-strip {
+    font-size: 8px;
+  }
+  .boss-hud {
+    top: 78px;
+    padding: 7px 9px;
+  }
+  .boss-hud .boss-name {
+    font-size: 10px;
+  }
+  .boss-hud .main-boss-bar {
+    height: 5px;
+    margin: 6px 0;
+  }
+  .part-bars {
+    font-size: 7px;
+  }
+  .boss-status {
+    font-size: 6px;
+    margin-top: 5px;
+  }
+  .boss-alert strong {
+    font-size: 35px;
+  }
+  .radio {
+    font-size: 10px;
+  }
+  .report {
+    padding: 24px;
+  }
+  .report h2 {
+    font-size: 33px;
+  }
+  .report .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .report .stat-item b {
+    font-size: 22px;
+  }
+  .report .medals {
+    grid-template-columns: 1fr;
+  }
+  .report .medal {
+    padding: 10px;
+  }
+  .report .buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .menu-detail {
+    display: none;
+  }
+}
+@media (max-height: 700px) and (min-width: 851px) {
+  .hangar-v4,
+  .briefing-v4,
+  .options-v4 {
+    inset: 12vh 5vw 6vh;
+  }
+  .hangar-v4 h2 {
+    font-size: 27px;
+  }
+  .hangar-v4 {
+    gap: 12px;
+  }
+  .preview-title h3 {
+    font-size: 23px;
+  }
+  .ship-stats {
+    padding: 12px;
+    gap: 10px;
+  }
+  .briefing-copy h2 {
+    font-size: 33px;
+  }
+  .briefing-copy > p {
+    margin: 13px 0;
+  }
+  .briefing-facts {
+    margin: 15px 0;
+  }
+  .briefing-copy .objectives {
+    margin: 15px 0;
+    padding: 14px;
+  }
+  .intel-window {
+    height: 210px;
+  }
+  .boss-intel {
+    padding: 18px;
+  }
+  .report h2 {
+    font-size: 32px;
+  }
+}
+.screen:has(.hangar-v4) {
+  background: linear-gradient(
+    90deg,
+    #061821b0,
+    transparent 28%,
+    transparent 70%,
+    #06182166
+  );
+}
+.screen:has(.briefing-v4) {
+  background: linear-gradient(
+    90deg,
+    #061821ed,
+    #061821cc 38%,
+    #06182144 65%,
+    #06182177
+  );
+}

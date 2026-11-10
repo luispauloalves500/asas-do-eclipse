@@ -1,3 +1,8 @@
+import { Mountains } from "./Mountains";
+import { Atmosphere } from "./Atmosphere";
+import { Presentation } from "./Presentation";
+import { defaults, type Preferences } from "../persistence/Preferences";
+import type { AircraftId } from "../data/aircraft";
 import * as T from "three";
 import { Models } from "./Models";
 import { Canyon } from "./Canyon";
@@ -23,6 +28,17 @@ export class Renderer {
   boss: T.Group;
   serpent: T.Group;
   canyon: Canyon;
+  mountains: Mountains;
+  atmosphere: Atmosphere;
+  presentation: Presentation;
+  cyclone: T.Group;
+  hazardGlyphs: T.InstancedMesh;
+  hazardTrails: T.InstancedMesh;
+  presentationMode = "menu";
+  aircraftId: AircraftId = "A01";
+  options = { ...defaults };
+  previewRect: { x: number; y: number; width: number; height: number } | null =
+    null;
   convoyMeshes = new Map<number, T.Group>();
   mineRings: T.InstancedMesh;
   stageId: StageId = "M01";
@@ -81,6 +97,13 @@ export class Renderer {
     this.canyon = new Canyon((color) => this.material(color));
     this.canyon.visible = false;
     this.scene.add(this.canyon);
+    this.mountains = new Mountains((c) => this.material(c));
+    this.mountains.visible = false;
+    this.scene.add(this.mountains);
+    this.atmosphere = new Atmosphere();
+    this.scene.add(this.atmosphere);
+    this.presentation = new Presentation((c) => this.material(c));
+    this.scene.add(this.presentation);
     this.particles = new Particles(this.scene);
     this.groundShadows = new T.InstancedMesh(
       new T.CircleGeometry(1, 16),
@@ -131,6 +154,11 @@ export class Renderer {
     this.serpent = this.models.serpent();
     this.serpent.visible = false;
     this.scene.add(this.serpent);
+    this.cyclone = this.models.cyclone();
+    this.cyclone.visible = false;
+    this.scene.add(this.cyclone);
+    for (const boss of [this.boss, this.serpent, this.cyclone])
+      this.personalize(boss);
     const bg = new T.CircleGeometry(0.19, 10),
       material = new T.MeshBasicMaterial({
         color: 0xffffff,
@@ -180,6 +208,33 @@ export class Renderer {
     this.mineRings.renderOrder = 103;
     this.mineRings.frustumCulled = false;
     this.scene.add(this.mineRings);
+    this.hazardGlyphs = new T.InstancedMesh(
+      new T.RingGeometry(0.31, 0.43, 3),
+      new T.MeshBasicMaterial({
+        color: 0xffffff,
+        depthTest: false,
+        depthWrite: false,
+        transparent: true,
+      }),
+      600,
+    );
+    this.hazardTrails = new T.InstancedMesh(
+      new T.PlaneGeometry(1, 1),
+      new T.MeshBasicMaterial({
+        color: 0xffffff,
+        opacity: 0.4,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+      }),
+      600,
+    );
+    this.hazardGlyphs.renderOrder = 104;
+    this.hazardTrails.renderOrder = 99;
+    for (const m of [this.hazardGlyphs, this.hazardTrails]) {
+      m.frustumCulled = false;
+      this.scene.add(m);
+    }
     this.beam = new T.Mesh(
       new T.PlaneGeometry(1, 1),
       new T.MeshBasicMaterial({
@@ -193,6 +248,58 @@ export class Renderer {
     this.scene.add(this.beam);
     window.addEventListener("resize", () => this.resize());
     this.resize();
+  }
+  personalize(g: T.Group) {
+    const clones = new Map<T.MeshStandardMaterial, T.MeshStandardMaterial>();
+    g.traverse((o) => {
+      if (o instanceof T.Mesh && o.material instanceof T.MeshStandardMaterial) {
+        const base = o.material;
+        if (!clones.has(base)) {
+          const copy = base.clone();
+          copy.userData.emissive = base.emissive.getHex();
+          clones.set(base, copy);
+        }
+        o.material = clones.get(base)!;
+      }
+    });
+    g.userData.flashMaterials = [...clones.values()];
+  }
+  flash(g: T.Group, on: boolean) {
+    for (const m of (g.userData.flashMaterials ||
+      []) as T.MeshStandardMaterial[]) {
+      m.emissive.setHex(on ? 0xd8eeff : m.userData.emissive);
+      m.emissiveIntensity = on ? 0.85 : 0.35;
+    }
+  }
+  configure(p: Preferences) {
+    this.options = { ...p };
+    const cap = p.quality === "baixa" ? 0.6 : p.quality === "media" ? 0.8 : 1;
+    this.quality.level = cap;
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5) * cap);
+    this.resize();
+  }
+  setAircraft(id: AircraftId) {
+    if (this.aircraftId === id) return;
+    this.aircraftId = id;
+    for (const ship of [this.player, this.menuShip]) {
+      this.scene.remove(ship);
+      this.releaseUnique(ship);
+    }
+    this.player = id === "A02" ? this.models.boreas() : this.models.ship();
+    this.menuShip = id === "A02" ? this.models.boreas() : this.models.ship();
+    this.scene.add(this.player, this.menuShip);
+  }
+  setPresentation(mode: string) {
+    this.presentationMode = mode;
+    this.previewRect = null;
+  }
+  layoutPreview() {
+    const r = document
+      .querySelector(".ship-window,.intel-window")
+      ?.getBoundingClientRect();
+    this.previewRect = r
+      ? { x: r.x, y: r.y, width: r.width, height: r.height }
+      : null;
   }
   material(color: number) {
     if (!this.matCache.has(color))
@@ -289,6 +396,7 @@ export class Renderer {
     this.stageId = id;
     this.terrain.visible = id === "M01";
     this.canyon.visible = id === "M02";
+    this.mountains.visible = id === "M03";
   }
   setMenu(menu: boolean) {
     if (this.menu === menu) return;
@@ -299,6 +407,7 @@ export class Renderer {
     const w = window.innerWidth,
       h = window.innerHeight;
     this.metrics = viewport(w, h);
+    this.layoutPreview();
     this.host.style.width = `${w}px`;
     this.host.style.height = `${h}px`;
     this.renderer.setSize(w, h);
@@ -347,11 +456,30 @@ export class Renderer {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
     this.particles.quality = this.quality.level;
-    (this.stageId === "M02" ? this.canyon : this.terrain).update(
+    const sky =
+      this.menu && !["map", "briefing"].includes(this.presentationMode);
+    this.presentation.visible = sky;
+    this.terrain.visible = !sky && this.stageId === "M01";
+    this.canyon.visible = !sky && this.stageId === "M02";
+    this.mountains.visible = !sky && this.stageId === "M03";
+    (this.stageId === "M02"
+      ? this.canyon
+      : this.stageId === "M03"
+        ? this.mountains
+        : this.terrain
+    ).update(
       world && !this.menu ? world.scroll : this.menuTime * 0.55,
       this.menuTime,
       this.quality.level,
       this.menu ? 28 : this.metrics.worldHeight,
+    );
+    this.atmosphere.visible = !sky;
+    this.atmosphere.update(
+      world && !this.menu ? world.scroll : this.menuTime * 0.55,
+      this.menuTime,
+      this.stageId,
+      this.quality.level,
+      world?.boss?.wind || 0,
     );
     this.vignette.visible = !this.menu;
     this.groundShadows.visible = !this.menu;
@@ -360,38 +488,110 @@ export class Renderer {
       sy = Math.cos(this.menuTime * 71) * this.shake;
     this.camera.position.set(sx, sy, 50);
     this.camera.lookAt(sx, sy, 0);
-    this.menuShip.visible = this.menu;
+    this.menuShip.visible =
+      this.menu &&
+      this.presentationMode !== "map" &&
+      this.presentationMode !== "briefing";
     this.shadow.visible = !this.menu && !!world && world.player.hp > 0;
     this.player.visible = !this.menu && !!world && world.player.hp > 0;
-    this.boss.visible = !this.menu && !!world?.boss && !world.boss.cars;
+    this.boss.visible =
+      !this.menu && !!world?.boss && !world.boss.cars && !world.boss.kind;
+    this.cyclone.visible = !this.menu && world?.boss?.kind === "ciclone";
     this.serpent.visible = !this.menu && !!world?.boss?.cars;
     if (this.menu) {
-      this.menuShip.position.set(
-        Math.max(3, this.camera.right * 0.36),
-        -0.3,
-        3,
-      );
-      this.menuShip.scale.setScalar(3.5);
-      this.animateShip(this.menuShip, 0, 0);
+      const r = this.previewRect,
+        ww = this.camera.right - this.camera.left,
+        wh = this.camera.top - this.camera.bottom;
+      const x = r
+          ? ((r.x + r.width / 2) / window.innerWidth - 0.5) * ww
+          : Math.max(2, this.camera.right * 0.37),
+        y = r
+          ? (0.5 -
+              (r.y +
+                r.height / 2 -
+                (this.presentationMode === "hangar" ? 40 : 0)) /
+                window.innerHeight) *
+            wh
+          : 0.6;
+      const scale = r
+        ? Math.min(
+            ((r.width / window.innerWidth) * ww) / 3.2,
+            ((r.height / window.innerHeight) * wh) / 2.7,
+          ) * 0.8
+        : 4.1;
+      this.menuShip.position.set(x, y, 3);
+      this.menuShip.scale.setScalar(scale);
+      this.animateShip(this.menuShip, Math.sin(this.menuTime * 0.3), 0);
       this.menuShip.rotation.set(
-        0.28,
-        Math.sin(this.menuTime * 0.3) * 0.16,
-        -0.38 + Math.sin(this.menuTime * 0.2) * 0.04,
+        0.58,
+        Math.sin(this.menuTime * 0.3) * 0.2,
+        this.presentationMode === "hangar"
+          ? this.menuTime * 0.13
+          : -0.45 + Math.sin(this.menuTime * 0.2) * 0.08,
       );
+      this.menuShip.getObjectByName("hitbox")!.visible = false;
+      this.presentation.update(
+        this.menuTime,
+        x,
+        y,
+        this.presentationMode === "hangar",
+      );
+      if (this.presentationMode === "briefing") {
+        const model =
+          this.stageId === "M01"
+            ? this.boss
+            : this.stageId === "M02"
+              ? this.serpent
+              : this.cyclone;
+        model.visible = true;
+        model.position.set(x, y, 2.5);
+        model.scale.setScalar(
+          r
+            ? Math.min(
+                ((r.width / window.innerWidth) * ww) / 12,
+                ((r.height / window.innerHeight) * wh) / 5,
+              )
+            : 1,
+        );
+        model.rotation.z = Math.sin(this.menuTime * 0.3) * 0.08;
+        if (this.stageId === "M02") {
+          for (let i = 0; i < 4; i++) {
+            const n = model.getObjectByName("car" + i)!;
+            n.position.set(-3.6 + i * 2.4, 0, 0);
+            n.getObjectByName("intact")!.visible = true;
+            n.getObjectByName("wreck")!.visible = false;
+          }
+        } else {
+          model.getObjectByName("left")!.visible = model.getObjectByName(
+            "right",
+          )!.visible = true;
+          model.getObjectByName("leftWreck")!.visible = model.getObjectByName(
+            "rightWreck",
+          )!.visible = false;
+        }
+      }
     }
     if (world && !this.menu) {
       const p = world.player;
+      for (const boss of [this.boss, this.serpent, this.cyclone]) {
+        boss.scale.setScalar(1);
+        boss.rotation.z = 0;
+      }
+      this.player.getObjectByName("hitbox")!.visible = this.options.showHitbox;
       this.player.position.set(
         this.lerp(p.px, p.x, alpha),
         this.lerp(p.py, p.y, alpha),
-        6,
+        4.2 + p.altitude * 2.2,
       );
       this.animateShip(this.player, p.vx, p.vy);
       this.shadow.position.set(
-        this.player.position.x + 0.6,
-        this.player.position.y - 0.55,
+        this.player.position.x + 0.3 + p.altitude * 0.6,
+        this.player.position.y - 0.3 - p.altitude * 0.45,
         0.15,
       );
+      this.shadow.scale.set(1 - p.altitude * 0.28, 0.65 - p.altitude * 0.15, 1);
+      (this.shadow.material as T.MeshBasicMaterial).opacity =
+        0.38 - p.altitude * 0.15;
       this.player.rotation.set(
         (p.vy / 8.2) * 0.14,
         (-p.vx / 8.2) * 0.314,
@@ -399,7 +599,23 @@ export class Renderer {
       );
       this.player.visible =
         p.hp > 0 && !(p.invul > 0 && Math.floor(this.menuTime * 12) % 2 === 0);
-      if (world.boss?.cars) {
+      if (world.boss?.kind === "ciclone") {
+        const b = world.boss;
+        this.cyclone.position.set(b.x, this.lerp(b.py, b.y, alpha), 5.3);
+        this.cyclone.rotation.z = b.dead
+          ? Math.sin(b.deathTime * 8) * 0.06
+          : Math.sin(b.age * 0.9) * 0.035;
+        this.cyclone.getObjectByName("left")!.visible = b.left > 0;
+        this.cyclone.getObjectByName("right")!.visible = b.right > 0;
+        this.cyclone.getObjectByName("leftWreck")!.visible = b.left <= 0;
+        this.cyclone.getObjectByName("rightWreck")!.visible = b.right <= 0;
+        for (const side of ["left", "right"])
+          this.cyclone
+            .getObjectByName(side)!
+            .getObjectByName("rotor")!.rotation.z = this.menuTime * 24;
+        this.flash(this.cyclone, (b.flash || 0) > 0);
+        this.cyclone.visible = b.deathTime < 3.2;
+      } else if (world.boss?.cars) {
         const b = world.boss;
         this.serpent.position.set(0, 0, 2.5);
         for (const [i, c] of b.cars!.entries()) {
@@ -421,6 +637,7 @@ export class Renderer {
             joint.getObjectByName("weakpoint")!.scale.x = 1 / joint.scale.x;
           }
         }
+        this.flash(this.serpent, (b.flash || 0) > 0);
         this.serpent.visible = b.deathTime < 3.2;
       } else if (world.boss) {
         const b = world.boss;
@@ -430,6 +647,7 @@ export class Renderer {
         if (b.hp < this.lastBossHP && b.hp > 0) {
           this.particles.emit(0, b.y, 10, 0xffffff, 1, 0.07);
         }
+        this.flash(this.boss, (b.flash || 0) > 0);
         this.lastBossHP = b.hp;
         this.boss.getObjectByName("left")!.visible = b.left > 0;
         this.boss.getObjectByName("right")!.visible = b.right > 0;
@@ -461,8 +679,8 @@ export class Renderer {
           this.particles.emit(
             p.x + x,
             p.y - 1.2,
-            5.9,
-            0x76cfd0,
+            4.1 + p.altitude * 2.2,
+            p.posture === "alta" ? 0x76cfd0 : 0xffcf8c,
             0.14,
             0.38,
             -p.vx * 0.04,
@@ -475,11 +693,12 @@ export class Renderer {
       }
       if (p.hp < this.lastHP) {
         this.particles.emit(p.x, p.y, 10, 0xb7faff, 1.5, 0.12);
-        this.shake = Math.max(this.shake, 0.035);
+        this.shake = Math.max(this.shake, 0.07);
       }
       this.lastHP = p.hp;
       let count = 0,
-        mineCount = 0;
+        mineCount = 0,
+        hazardCount = 0;
       for (const b of world.pool.items) {
         if (!b.active) continue;
         const x = this.lerp(b.px, b.x, alpha),
@@ -490,6 +709,37 @@ export class Renderer {
           0,
           b.style === "mine" ? this.menuTime * 2 : 0,
         );
+        if (b.hazard === "ground_only" || b.style === "missile") {
+          const angle = Math.atan2(b.vy, b.vx),
+            color = b.hazard === "ground_only" ? 0xffd37a : 0xcdaeff;
+          this.dummy.position.set(x, y, 12.4);
+          this.dummy.rotation.z = angle;
+          this.dummy.scale.setScalar(
+            b.arm > 0 ? 1.3 + Math.sin(this.menuTime * 18) * 0.12 : 1,
+          );
+          this.dummy.updateMatrix();
+          this.hazardGlyphs.setMatrixAt(hazardCount, this.dummy.matrix);
+          this.hazardGlyphs.setColorAt(hazardCount, this.colors.setHex(color));
+          this.dummy.position.set(
+            x - Math.cos(angle) * 0.55,
+            y - Math.sin(angle) * 0.55,
+            11.8,
+          );
+          this.dummy.rotation.z = angle - Math.PI / 2;
+          this.dummy.scale.set(0.075, 0.7, 1);
+          this.dummy.updateMatrix();
+          this.hazardTrails.setMatrixAt(hazardCount, this.dummy.matrix);
+          this.hazardTrails.setColorAt(
+            hazardCount++,
+            this.colors.setHex(color),
+          );
+          this.dummy.position.set(x, y, 12.1);
+          this.dummy.rotation.set(
+            0,
+            0,
+            b.style === "mine" ? this.menuTime * 2 : 0,
+          );
+        }
         const size = b.style === "wide" ? 1.8 : b.style === "mine" ? 1.5 : 1;
         this.dummy.scale.set(
           b.friendly ? 0.58 : size,
@@ -514,9 +764,13 @@ export class Renderer {
           this.colors.set(
             b.friendly
               ? C.cyan
-              : b.style === "mine" && b.arm > 0
-                ? 0xffce83
-                : 0xff785e,
+              : b.hazard === "ground_only"
+                ? 0xffc76b
+                : b.style === "missile"
+                  ? 0xd4a9ff
+                  : b.style === "mine" && b.arm > 0
+                    ? 0xffce83
+                    : 0xff785e,
           ),
         );
         this.dummy.position.z = 12;
@@ -528,6 +782,12 @@ export class Renderer {
         this.dummy.updateMatrix();
         this.outlines.setMatrixAt(count, this.dummy.matrix);
         count++;
+      }
+      for (const m of [this.hazardGlyphs, this.hazardTrails]) {
+        m.count = hazardCount;
+        m.visible = true;
+        m.instanceMatrix.needsUpdate = true;
+        if (m.instanceColor) m.instanceColor.needsUpdate = true;
       }
       this.mineRings.count = mineCount;
       this.mineRings.visible = true;
@@ -549,6 +809,8 @@ export class Renderer {
         this.outlines,
         this.beam,
         this.mineRings,
+        this.hazardGlyphs,
+        this.hazardTrails,
       ])
         m.visible = false;
       for (const maps of [
@@ -602,6 +864,7 @@ export class Renderer {
       let m = this.enemyMeshes.get(e.id);
       if (!m) {
         m = this.enemy(e);
+        this.personalize(m);
         this.enemyMeshes.set(e.id, m);
         this.scene.add(m);
       }
@@ -611,6 +874,13 @@ export class Renderer {
         this.lerp(e.py, e.y, a),
         ["E05", "E06", "E07"].includes(e.kind) ? 2.1 : 6,
       );
+      this.flash(m, e.flash > 0);
+      if (e.wings) {
+        for (const [i, side] of ["Left", "Right"].entries()) {
+          m.getObjectByName("wing" + side)!.visible = e.wings[i] > 0;
+          m.getObjectByName("wing" + side + "Wreck")!.visible = e.wings[i] <= 0;
+        }
+      }
       m.rotation.z = e.kind === "E02" ? Math.cos(e.age * 1.7) * 0.15 : 0;
       if (m.userData.hp !== undefined && e.hp < m.userData.hp)
         this.particles.emit(e.x, e.y, 10, 0xffedbf, 0.7, 0.075);
@@ -769,7 +1039,7 @@ export class Renderer {
           Math.min(f.size, 2),
           parseInt(f.color.slice(1), 16),
         );
-        if (f.size > 1.4) this.shake = Math.max(this.shake, 0.025);
+        if (f.size > 1.4) this.shake = Math.max(this.shake, 0.055);
         this.fxMeshes.set(f.id, m);
         this.scene.add(m);
       }

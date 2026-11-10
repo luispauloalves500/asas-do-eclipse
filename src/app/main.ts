@@ -1,3 +1,17 @@
+import {
+  hangarScreen,
+  briefingScreen,
+  optionsPanel,
+  bossHud,
+  upgradeEffect,
+} from "./ScreenParts";
+import {
+  aircraft,
+  selectedAircraft,
+  shipAvailable,
+  type AircraftId,
+} from "../data/aircraft";
+import { preferences, type Preferences } from "../persistence/Preferences";
 import "./style.css";
 import { stages, stageInfo, type StageId } from "../data/stages";
 import {
@@ -28,6 +42,9 @@ const store = new SaveStore();
 let save: Save = store.load();
 const audio = new AudioManager();
 audio.setEnabled(save.settings.sound);
+audio.configure(preferences(save));
+renderer.configure(preferences(save));
+renderer.setAircraft(selectedAircraft(save));
 let world: World | null = null,
   screen = "menu",
   paused = false,
@@ -37,12 +54,13 @@ let world: World | null = null,
   modal = "";
 const clock = new Clock();
 let qaControl: Commands | null = null;
-document.documentElement.dataset.version = "0.3.0";
+let hitStop = 0;
+document.documentElement.dataset.version = "0.4.0";
 const debug = new URLSearchParams(location.search).get("debug");
 const requested = new URLSearchParams(location.search).get("stage");
 let selectedStage: StageId =
-  debug && requested === "M02"
-    ? "M02"
+  debug && (requested === "M02" || requested === "M03")
+    ? requested
     : save.campaign?.lastStage || (save.cleared ? "M02" : "M01");
 if (!debug && !available(save, selectedStage)) selectedStage = "M01";
 let mapNode: string = selectedStage;
@@ -58,7 +76,7 @@ function brand() {
   return '<div class="brand"><i class="emblem"><span>Λ</span></i> ESQUADRÃO AURORA</div>';
 }
 function footer() {
-  return `<div class="footer"><span>ATO I · M01 + M02 · v0.3.0</span><span>${store.status} · SEM SERVIÇOS EXTERNOS</span></div>`;
+  return `<div class="footer"><span>ATO I · M01 + M02 + M03 · v0.4.0</span><span>${store.status} · SEM SERVIÇOS EXTERNOS</span></div>`;
 }
 function base(content: string) {
   return `<div class="screen">${brand()}<div class="top-right"><span>ASTERION / SETOR 01</span><span>◈ ${fmt(save.scrap)} SUCATAS</span></div>${content}${footer()}</div>`;
@@ -71,6 +89,8 @@ function show(next: string) {
   input.clear();
   clock.reset();
   renderer.setMenu(next !== "game");
+  renderer.setPresentation(next);
+  if (next === "briefing" || next === "map") renderer.setStage(selectedStage);
   if (next !== "game") audio.setMode("menu");
   renderScreen();
 }
@@ -80,37 +100,22 @@ function menu() {
 function renderScreen() {
   if (screen === "menu")
     ui.innerHTML = base(
-      `<div class="menu-copy"><div class="eyebrow">Ato I / Céu perdido</div><h1>ASAS DO<br><em>ECLIPSE</em></h1><div class="subtitle">GUERRA DOS CÉUS</div><p>O céu está fechado. Ainda existe uma rota.<br>Voe pela Aurora. Traga todos para casa.</p><div class="menu-nav">${btn("briefing", `<span>${save.cleared ? "JOGAR NOVAMENTE" : "INICIAR MISSÃO"}<small>${selectedStage} / ${stageInfo[selectedStage].name.toUpperCase()}</small></span><span>↗</span>`, "primary launch")}${btn("map", "CAMPANHA <small>Mapa do Ato I</small>")}${btn("hangar", "HANGAR <small>Aeronave e melhorias</small>")}${btn("options", "OPÇÕES <small>Áudio e controles</small>")}${btn("credits", "CRÉDITOS")}${btn("export", "EXPORTAR SAVE")}</div></div><div class="menu-detail"><div class="label">A01 / Caça de resistência</div><h3>VÉSPERA</h3><p>Projetada para resistir.<br>Preparada para recomeçar.</p><div class="rule"></div><div class="label">AUTOFIRE • 100 HP • ${upgrades.motor.effect(save.upgrades.motor)}</div></div>`,
+      `<div class="menu-copy"><div class="eyebrow">Ato I / Céu perdido</div><h1>ASAS DO<br><em>ECLIPSE</em></h1><div class="subtitle">GUERRA DOS CÉUS</div><p>O céu está fechado. Ainda existe uma rota.<br>Voe pela Aurora. Traga todos para casa.</p><div class="menu-nav">${btn("briefing", `<span>${save.cleared ? "JOGAR NOVAMENTE" : "INICIAR MISSÃO"}<small>${selectedStage} / ${stageInfo[selectedStage].name.toUpperCase()}</small></span><span>↗</span>`, "primary launch")}${btn("map", "CAMPANHA <small>Mapa do Ato I</small>")}${btn("hangar", "HANGAR <small>Aeronave e melhorias</small>")}${btn("options", "OPÇÕES <small>Áudio e controles</small>")}${btn("credits", "CRÉDITOS")}${btn("export", "EXPORTAR SAVE")}</div></div><div class="menu-detail"><div class="label">A01 / Caça de resistência</div><h3>${aircraft[selectedAircraft(save)].name.toUpperCase()}</h3><p>Projetada para resistir.<br>Preparada para recomeçar.</p><div class="rule"></div><div class="label">AUTOFIRE • 100 HP • ${upgrades.motor.effect(save.upgrades.motor)}</div></div>`,
     );
   else if (screen === "map") ui.innerHTML = base(campaignMap(save, mapNode));
-  else if (screen === "briefing") {
-    const info = stageInfo[selectedStage];
-    ui.innerHTML = base(
-      `<section class="briefing">${btn("map", "← MAPA", "back")}<div class="eyebrow">${selectedStage} / ${info.biome}</div><h2>${info.name}</h2><p>${info.intro}</p><div class="facts"><div><span class="label">Duração prevista</span><b>${info.duration}</b></div><div><span class="label">Aeronave</span><b>A01 Véspera</b></div><div><span class="label">Ameaças</span><b>${info.risk}</b></div><div><span class="label">Dificuldade</span><b>Normal</b></div></div><div class="objectives"><span class="label">Objetivos</span><p>◇ Derrotar ${info.boss} e abrir a rota.</p><p>◇ Resgatar 3 civis: fique perto por 1,5 s.</p><p>◇ ${selectedStage === "M02" ? "Destruir dois vagões de munição antes da fuga." : "Destruir 70% / 95% dos alvos. Sobreviver."}</p></div><div class="buttons">${btn("start", "INICIAR VOO ↗", "primary")}${btn("hangar", "PREPARAR NAVE")}</div></section>`,
-    );
-  } else if (screen === "hangar")
-    ui.innerHTML = base(
-      `<section class="hangar">${btn("menu", "← MENU", "back")}<div class="eyebrow">Ícaro / Oficina da Aurora</div><header><div><h2>Pronta para<br>o próximo voo.</h2></div><div><div class="label">Sucatas</div><div class="balance">${fmt(save.scrap)}</div></div></header>${(
-        Object.keys(upgrades) as Upgrade[]
-      )
-        .map((k) => {
-          const u = upgrades[k],
-            n = save.upgrades[k];
-          return `<div class="upgrade"><div><h3>${u.name} <small> ${n}/${u.max}</small></h3><p>${u.description}</p><div class="preview"><span>${u.effect(n)}</span><span>→ ${n === u.max ? "MÁXIMO" : u.effect(n + 1)}</span></div></div>${btn("buy:" + k, n === u.max ? "MÁXIMO" : `MELHORAR<small>◈ ${cost(n)} sucatas</small>`, "", n >= u.max || save.scrap < cost(n) ? "disabled" : "")}</div>`;
-        })
-        .join(
-          "",
-        )}<p style="font-size:11px;margin:15px 0">Melhorias permanentes. Primeira vitória: 300 (M01) / 410 (M02) sucatas + bônus.<br>Em derrota, você mantém 60% da sucata coletada.</p><div class="buttons">${btn("briefing", "PREPARAR MISSÃO ↗", "primary")}</div>${store.status.startsWith("Não") ? `<p class="save-warning">${store.status}</p>` : ""}</section>`,
-    );
+  else if (screen === "briefing")
+    ui.innerHTML = base(briefingScreen(save, selectedStage));
+  else if (screen === "hangar") ui.innerHTML = base(hangarScreen(save));
   else if (screen === "options")
     ui.innerHTML = base(
-      `<section class="options">${btn("menu", "← VOLTAR", "back")}<div class="eyebrow">Configuração de voo</div><h2>Você no controle.</h2><p><b>WASD / setas</b> · mover<br><b>Shift / botão direito</b> · Raio Lança (2 cargas)<br><b>E</b> · Bomba de Pulso (2 cargas)<br><b>Esc / P</b> · pausar<br><b>Mouse / toque</b> · arrastar para mover relativamente<br><b>Controle</b> · analógico / D-pad; A especial, B bomba, Start pausa</p><p>Disparo automático. Sua hitbox é o ponto ciano no centro da nave. Resgate mantendo-se no círculo por 1,5 s. O progresso decai gradualmente ao sair.</p><div class="buttons">${btn("sound", save.settings.sound ? "ÁUDIO: LIGADO" : "ÁUDIO: DESLIGADO")}${btn("export", "EXPORTAR SAVE")}</div><p>Postura fixa neste protótipo. Recomenda-se jogar na vertical. Dados salvos apenas neste navegador.</p></section>`,
+      '<section class="options-v4">' + optionsPanel(save) + "</section>",
     );
   else if (screen === "credits")
     ui.innerHTML = base(
-      `<section class="options credits">${btn("menu", "← MENU", "back")}<div class="eyebrow">Uma rota original</div><h2>Asas do Eclipse</h2><p>Guerra dos Céus · Fatia vertical M01 + M02<br>Universo e design: GDD original fornecido pelo criador.<br>Implementação, modelos low-poly, interface e áudio sintetizado: produzidos para este protótipo.</p><p>Three.js — licença MIT.<br>Vite, TypeScript, Vitest e Playwright — ferramentas de desenvolvimento (licenças em ASSET_LICENSES.md).</p><p>Nenhuma arte, código, música ou padrão foi extraído de Sky Force. Este é um protótipo original em evolução, não a campanha completa.</p><div class="label">Próximo marco: validar M02 e a campanha antes de M03.</div></section>`,
+      `<section class="options credits">${btn("menu", "← MENU", "back")}<div class="eyebrow">Uma rota original</div><h2>Asas do Eclipse</h2><p>Guerra dos Céus · Fatia vertical M01 + M02 + M03<br>Universo e design: GDD original fornecido pelo criador.<br>Implementação, modelos low-poly, interface e áudio sintetizado: produzidos para este protótipo.</p><p>Three.js — licença MIT.<br>Vite, TypeScript, Vitest e Playwright — ferramentas de desenvolvimento (licenças em ASSET_LICENSES.md).</p><p>Nenhuma arte, código, música ou padrão foi extraído de Sky Force. Este é um protótipo original em evolução, não a campanha completa.</p><div class="label">Próximo marco: validar as três missões antes de M04.</div></section>`,
     );
   else if (screen === "game") renderGame();
+  renderer.layoutPreview();
 }
 function start() {
   renderer.clearSession();
@@ -119,6 +124,9 @@ function start() {
     return;
   }
   renderer.setStage(selectedStage);
+  renderer.setAircraft(selectedAircraft(save));
+  audio.setStage(selectedStage);
+  hitStop = 0;
   world = new World(save, !!debug, selectedStage);
   if (!debug) {
     rememberStage(save, selectedStage);
@@ -135,7 +143,7 @@ function start() {
   updateHUD();
 }
 function renderGame() {
-  ui.innerHTML = `<div class="field-ui"><div class="hud-top"><div><div class="label">Integridade</div><b id="hp">100 / 100</b><div class="hpbar" id="hpbar"><i></i></div></div><div class="score"><div class="label">Pontuação</div><b id="score">0</b><div class="hud-small"><span id="combo">x1,0</span><span id="time">00:00</span></div></div><div>${btn("pause", "Ⅱ", "icon", 'aria-label="Pausar"')}<div class="hud-small" id="rescues">0/3</div></div></div><div class="flight-strip"><span>${selectedStage === "M01" ? "M01 / ARKAN" : "M02 / CÂNION"}</span><span>◈ <b id="scrap">0</b></span><span>ALVOS <b id="elimination">0%</b></span></div><div id="boss"></div><div id="rescue-labels"></div><div id="convoy-labels"></div><div class="radio" id="radio"></div>${debug ? '<div class="debug-tag">TESTE / SEM RECOMPENSAS DE PERFIL</div>' : ""}<div class="hud-bottom">${btn("bomb", '[E] PULSO <b id="bombs">2</b><small>LIMPA PROJÉTEIS</small>')}${btn("special", '[SHIFT] RAIO <b id="specials">2</b><small>FEIXE PERFURANTE</small>')}</div></div><div id="overlays"></div>`;
+  ui.innerHTML = `<div class="field-ui"><div class="hud-top"><div><div class="label">Integridade</div><b id="hp">100 / 100</b><div class="hpbar" id="hpbar"><i></i></div></div><div class="score"><div class="label">Pontuação</div><b id="score">0</b><div class="hud-small"><span id="combo">x1,0</span><span id="time">00:00</span></div></div><div>${btn("pause", "Ⅱ", "icon", 'aria-label="Pausar"')}<div class="hud-small" id="rescues">0/3</div></div></div><div class="flight-strip"><span>${selectedStage === "M01" ? "M01 / ARKAN" : selectedStage === "M02" ? "M02 / CÂNION" : "M03 / FORTALEZA"}</span><span>◈ <b id="scrap">0</b></span><span>ALVOS <b id="elimination">0%</b></span></div><div id="boss"></div><div id="rescue-labels"></div><div id="convoy-labels"></div><div class="radio" id="radio"></div>${debug ? '<div class="debug-tag">TESTE / SEM RECOMPENSAS DE PERFIL</div>' : ""}<div class="hud-bottom">${btn("bomb", '[E] PULSO <b id="bombs">2</b><small>LIMPA PROJÉTEIS</small>')}${btn("posture", '[Q] ALTITUDE <b id="posture-name">RASANTE</b><small id="posture-time">+20% SOLO</small>', "posture-button")}${btn("special", '[SHIFT] RAIO <b id="specials">2</b><small>FEIXE PERFURANTE</small>')}</div></div><div id="overlays"></div>`;
 }
 function text(id: string, value: string) {
   const e = document.getElementById(id);
@@ -145,14 +153,14 @@ function updateHUD() {
   if (screen !== "game" || !world) return;
   const w = world,
     p = w.player;
-  text("hp", `${Math.ceil(p.hp)} / 100`);
+  text("hp", `${Math.ceil(p.hp)} / ${p.maxHp}`);
   const bar = document.querySelector<HTMLElement>("#hpbar i");
-  if (bar) bar.style.width = p.hp + "%";
+  if (bar) bar.style.width = (p.hp / p.maxHp) * 100 + "%";
   document.getElementById("hpbar")?.classList.toggle("low", p.hp <= 30);
   text("score", fmt(w.score));
   text("combo", "x" + w.combo.toFixed(1).replace(".", ","));
   text("time", time(w.time));
-  text("rescues", `${w.rescued}/3 CIVIS`);
+  text("rescues", `${w.rescued}/${w.mission.rescues.length} CIVIS`);
   text("side-rescue", `${w.rescued} / 3`);
   text("bombs", String(p.bombs));
   text("specials", String(p.specials));
@@ -160,6 +168,20 @@ function updateHUD() {
   text("accuracy", `${Math.round(w.accuracy * 100)}%`);
   text("scrap", fmt(w.scrap));
   text("segment", w.segment);
+  text("posture-name", p.posture.toUpperCase());
+  text(
+    "posture-time",
+    p.transition > 0
+      ? "TROCANDO · " + p.transition.toFixed(1) + "s"
+      : p.postureCooldown > 0
+        ? "RECARGA · " + p.postureCooldown.toFixed(1) + "s"
+        : p.posture === "rasante"
+          ? "+20% SOLO · COLETA 2,0"
+          : "+15% AR · EVITA SOLO",
+  );
+  document
+    .querySelector(".posture-button")
+    ?.classList.toggle("high", p.posture === "alta");
   const convoyLabels = document.getElementById("convoy-labels");
   if (convoyLabels)
     convoyLabels.innerHTML = w.convoys
@@ -183,18 +205,9 @@ function updateHUD() {
       )
       .join("");
   const be = document.getElementById("boss");
-  if (be) {
-    const b = w.boss;
-    if (b?.cars && !b.dead) {
-      be.innerHTML = `<div class="boss-hud"><div class="boss-name"><span>SERPENTE DE FERRO</span><span class="gold">FASE ${b.phase}</span></div><div class="bar"><i style="width:${b.hp / 9}%"></i></div><div class="part-bars">${b.cars.map((c, i) => `<span>${i === 0 ? "REATOR" : "VAGÃO " + i} · ${Math.ceil(c.hp)}<div class="bar"><i style="width:${(c.hp / c.maxHp) * 100}%"></i></div></span>`).join("")}</div><div class="label">${b.invul > 0 ? "TRANSIÇÃO · " + b.invul.toFixed(1) + " s" : "JUNTAS / REATOR EXPOSTOS"}</div></div>`;
-      return;
-    }
-    be.innerHTML =
-      b && !b.dead
-        ? `<div class="boss-hud"><div class="boss-name"><span>GÁRGULA-01</span><span class="gold">FASE ${b.phase}</span></div><div class="bar"><i style="width:${b.hp / 6}%"></i></div><div class="part-bars"><span>CANHÃO E · ${Math.ceil(b.left)}<div class="bar"><i style="width:${b.left / 2}%"></i></div></span><span>${b.invul > 0 ? "TRANSIÇÃO · " + b.invul.toFixed(1) + " s" : `NÚCLEO · ${Math.ceil(b.hp)} / 600`}</span><span>CANHÃO D · ${Math.ceil(b.right)}<div class="bar"><i style="width:${b.right / 2}%"></i></div></span></div></div>`
-        : "";
-  }
+  if (be) be.innerHTML = bossHud(w);
 }
+
 function overlay(content: string) {
   const el = document.getElementById("overlays");
   if (el)
@@ -221,7 +234,7 @@ function togglePause() {
     input.clear();
     audio.setPaused(true);
     overlay(
-      `<div class="eyebrow">Voo suspenso</div><h2>Respire.<br>O céu espera.</h2><p>Simulação, resgates e ataques estão pausados.</p><div class="stack">${btn("resume", "CONTINUAR VOO", "primary")}${btn("restart-confirm", "REINICIAR MISSÃO")}${btn("pause-controls", "CONTROLES")}${btn("hangar-confirm", "VOLTAR AO HANGAR")}${btn("menu-confirm", "SAIR PARA O MENU")}</div>`,
+      `<div class="eyebrow">Voo suspenso</div><h2>Respire.<br>O céu espera.</h2><p>Simulação, resgates e ataques estão pausados.</p><div class="stack">${btn("resume", "CONTINUAR VOO", "primary")}${btn("restart-confirm", "REINICIAR MISSÃO")}${btn("pause-controls", "CONTROLES")}${btn("pause-options", "OPÇÕES")}${btn("hangar-confirm", "VOLTAR AO HANGAR")}${btn("menu-confirm", "SAIR PARA O MENU")}</div>`,
     );
   }
 }
@@ -247,7 +260,11 @@ function finish() {
       name: "85% DOS ALVOS",
       ok: win && w.elimination >= 0.85,
     },
-    { id: "rescue", name: "TODOS OS CIVIS", ok: win && w.rescued === 3 },
+    {
+      id: "rescue",
+      name: "TODOS OS CIVIS",
+      ok: win && w.rescued === w.mission.rescues.length,
+    },
     { id: "survive", name: "SEM PERDER NAVE", ok: win },
     { id: "ace", name: "ÁS · SEM DANO", ok: win && w.damageTaken === 0 },
   ];
@@ -259,7 +276,7 @@ function finish() {
   const bonus = win
     ? Math.round(
         base *
-          ((w.rescued === 3 ? 0.15 : 0) +
+          ((w.rescued === w.mission.rescues.length ? 0.15 : 0) +
             (w.elimination >= 0.85 ? 0.1 : 0) +
             (w.damageTaken === 0 ? 0.1 : 0)),
       )
@@ -281,13 +298,15 @@ function finish() {
     store.write(save);
   }
   const out = document.getElementById("overlays")!;
-  out.innerHTML = `<div class="overlay"><div class="dialog report"><div class="eyebrow">Relatório da operação / ${w.stageId}</div><h2>${win ? (w.stageId === "M02" ? "O mapa está conosco." : "Corredor liberado.") : "Ainda há uma rota."}</h2><p>${win ? (w.stageId === "M02" ? "Suri: encontrei coordenadas de uma estação Farol no trem. A próxima rota leva à Fortaleza do Vento." : "Lina: Arkan está livre. Ícaro: trouxe peças? O motor pode ficar melhor.") : `Derrubado por: ${w.lastDamage}.<br>Saia da linha de mira antes do feixe. Use a bomba para limpar projéteis.`}</p><div class="stats-grid">${[
+  out.innerHTML = `<div class="overlay"><div class="dialog report"><div class="eyebrow">Relatório da operação / ${w.stageId}</div><h2>${win ? (w.stageId === "M02" ? "O mapa está conosco." : w.stageId === "M03" ? "O vento mudou." : "Corredor liberado.") : "Ainda há uma rota."}</h2><p>${win ? (w.stageId === "M02" ? "Suri: encontrei coordenadas de uma estação Farol no trem. A próxima rota leva à Fortaleza do Vento." : w.stageId === "M03" ? "Lina: Fortaleza libertada. Bóreas pode voltar a voar pela Aurora." : "Lina: Arkan está livre. Ícaro: trouxe peças? O motor pode ficar melhor.") : `Derrubado por: ${w.lastDamage}.<br>Saia da linha de mira antes do feixe. Use a bomba para limpar projéteis.`}</p><div class="stats-grid">${[
     ["TEMPO", time(w.time)],
     ["PRECISÃO", `${Math.round(w.accuracy * 100)}%`],
-    ["RESGATES", `${w.rescued} / 3`],
+    ["RESGATES", `${w.rescued} / ${w.mission.rescues.length}`],
     ["PONTUAÇÃO", fmt(w.score)],
     ["ALVOS", `${w.kills} / ${w.spawned}`],
     ["DANO RECEBIDO", fmt(w.damageTaken)],
+    ["COMBO MÁXIMO", "x" + w.maxCombo.toFixed(1).replace(".", ",")],
+    ["SUBCOMPONENTES", String(w.parts + w.wingParts)],
   ]
     .map(
       ([l, v]) =>
@@ -295,7 +314,7 @@ function finish() {
     )
     .join(
       "",
-    )}</div><div class="medals">${medals.map((m) => `<span class="medal ${m.ok ? "earned" : ""}">${m.ok ? "◆" : "◇"} ${m.name}</span>`).join("")}</div><div class="label">ELIMINAÇÃO ${w.stageId}: ${w.elimination >= 0.7 ? "◆" : "◇"} 70% · ${w.elimination >= 0.95 ? "◆" : "◇"} 95% &nbsp; ${w.stageId === "M02" ? "VAGÕES" : "CANHÕES"}: ${w.parts}/${w.stageId === "M02" ? 3 : 2}${w.stageId === "M02" ? ` · MUNIÇÃO ${w.ammoDestroyed}/2 · BÔNUS +${ammoBonus}` : ""}</div><div class="earned-scrap"><div><span class="label">${w.debug ? "TESTE · SEM GANHOS REAIS" : win ? "Sucata garantida + coleta + bônus" : "Sucata mantida · 60% da coleta"}</span><p style="margin:4px 0 0;font-size:10px">${win ? `${base} base + ${w.scrap} coleta + ${bonus + ammoBonus} bônus` : `${w.scrap} coletadas nesta tentativa`}</p></div><b>+${w.debug ? 0 : fmt(earned)}</b></div><div class="buttons">${btn("start", win ? "JOGAR NOVAMENTE" : "TENTAR NOVAMENTE", "primary")}${win && w.stageId === "M01" ? btn("next-stage", "PRÓXIMA MISSÃO ↗") : btn("map", "MAPA")}${btn("hangar", "HANGAR")}${btn("menu", "MENU")}</div><p class="${store.status.startsWith("Não") ? "save-warning" : "label"}" style="margin-bottom:0">${store.status}</p>${store.status.startsWith("Não") ? btn("export", "EXPORTAR BACKUP") : ""}</div></div>`;
+    )}</div><div class="medals">${medals.map((m) => `<span class="medal ${m.ok ? "earned" : ""}">${m.ok ? "◆" : "◇"} ${m.name}<small>${({ clear: "Vitória no Normal", elimination: "Eliminar pelo menos 85%", rescue: `Resgatar ${w.mission.rescues.length}/${w.mission.rescues.length} civis`, survive: "Concluir sem morrer", ace: "Concluir sem sofrer dano" } as Record<string, string>)[m.id]}</small></span>`).join("")}</div><div class="label">ELIMINAÇÃO ${w.stageId}: ${w.elimination >= 0.7 ? "◆" : "◇"} 70% · ${w.elimination >= 0.95 ? "◆" : "◇"} 95% &nbsp; ${w.stageId === "M02" ? "VAGÕES" : w.stageId === "M03" ? "ROTORES" : "CANHÕES"}: ${w.parts}/${w.stageId === "M02" ? 3 : 2}${w.stageId === "M02" ? ` · MUNIÇÃO ${w.ammoDestroyed}/2 · BÔNUS +${ammoBonus}` : ""}</div>${win && w.stageId === "M03" ? `<div class="aircraft-reward">✦ A02 BÓREAS ${w.debug ? "· RECOMPENSA NA CAMPANHA" : "DESBLOQUEADA"}<small>80 HP · 9,7 un/s · esquiva reativa</small></div>` : ""}<div class="earned-scrap"><div><span class="label">${w.debug ? "TESTE · SEM GANHOS REAIS" : win ? "Sucata garantida + coleta + bônus" : "Sucata mantida · 60% da coleta"}</span><p style="margin:4px 0 0;font-size:10px">${win ? `${base} base + ${w.scrap} coleta + ${bonus + ammoBonus} bônus` : `${w.scrap} coletadas nesta tentativa`}</p></div><b>+${w.debug ? 0 : fmt(earned)}</b></div><div class="buttons">${btn("start", win ? "JOGAR NOVAMENTE" : "TENTAR NOVAMENTE", "primary")}${win && w.stageId !== "M03" ? btn("next-stage", "PRÓXIMA MISSÃO ↗") : btn("map", "MAPA")}${btn("hangar", "HANGAR")}${btn("menu", "MENU")}</div><p class="${store.status.startsWith("Não") ? "save-warning" : "label"}" style="margin-bottom:0">${store.status}</p>${store.status.startsWith("Não") ? btn("export", "EXPORTAR BACKUP") : ""}</div></div>`;
 }
 function exportSave() {
   const blob = new Blob([JSON.stringify(save, null, 2)], {
@@ -325,13 +344,14 @@ ui.addEventListener("click", async (e) => {
   }
   if (action.startsWith("map-select:")) {
     mapNode = action.split(":")[1];
-    if (mapNode === "M01" || mapNode === "M02") renderer.setStage(mapNode);
+    if (mapNode === "M01" || mapNode === "M02" || mapNode === "M03")
+      renderer.setStage(mapNode);
     renderScreen();
     return;
   }
   if (action.startsWith("map-play:")) {
     const id = action.split(":")[1];
-    if ((id === "M01" || id === "M02") && available(save, id)) {
+    if ((id === "M01" || id === "M02" || id === "M03") && available(save, id)) {
       selectedStage = id;
       renderer.setStage(id);
       show("briefing");
@@ -339,10 +359,25 @@ ui.addEventListener("click", async (e) => {
     return;
   }
   if (action === "next-stage") {
-    selectedStage = "M02";
-    mapNode = "M02";
-    renderer.setStage("M02");
+    selectedStage = world?.stageId === "M01" ? "M02" : "M03";
+    mapNode = selectedStage;
+    renderer.setStage(selectedStage);
     show("briefing");
+    return;
+  }
+  if (action.startsWith("ship:")) {
+    const id = action.split(":")[1] as AircraftId;
+    if ((id === "A01" || id === "A02") && shipAvailable(save, id)) {
+      save.aircraft = id;
+      store.write(save);
+      renderer.setAircraft(id);
+      renderScreen();
+    }
+    return;
+  }
+  if (action === "pause-options") {
+    modal = "pause-options";
+    overlay(optionsPanel(save, true));
     return;
   }
   if (action === "start") {
@@ -351,18 +386,20 @@ ui.addEventListener("click", async (e) => {
   } else if (action === "pause" || action === "resume") togglePause();
   else if (action === "bomb") input.bomb = true;
   else if (action === "special") input.special = true;
+  else if (action === "posture") input.posture = true;
   else if (action === "sound") {
     save.settings.sound = !save.settings.sound;
     audio.setEnabled(save.settings.sound);
     store.write(save);
-    renderScreen();
+    if (paused && screen === "game") overlay(optionsPanel(save, true));
+    else renderScreen();
   } else if (action === "export") exportSave();
   else if (action.startsWith("buy:")) {
     const k = action.split(":")[1] as Upgrade,
-      n = save.upgrades[k];
+      n = save.upgrades[k] || 0;
     ui.insertAdjacentHTML(
       "beforeend",
-      `<div class="overlay" id="purchase"><div class="dialog"><div class="eyebrow">Melhoria permanente</div><h2>${upgrades[k].name}</h2><p>${upgrades[k].effect(n)} → ${upgrades[k].effect(n + 1)}<br>Custo: ${cost(n)} sucatas. Saldo após compra: ${save.scrap - cost(n)}.</p><div class="buttons">${btn("confirm-buy:" + k, "CONFIRMAR", "primary")}${btn("cancel-buy", "VOLTAR")}</div></div></div>`,
+      `<div class="overlay" id="purchase"><div class="dialog"><div class="eyebrow">Melhoria permanente</div><h2>${upgrades[k].name}</h2><p>${upgradeEffect(save, k, n)} → ${upgradeEffect(save, k, n + 1)}<br>Custo: ${cost(n)} sucatas. Saldo após compra: ${save.scrap - cost(n)}.</p><div class="buttons">${btn("confirm-buy:" + k, "CONFIRMAR", "primary")}${btn("cancel-buy", "VOLTAR")}</div></div></div>`,
     );
   } else if (action.startsWith("confirm-buy:")) {
     const k = action.split(":")[1] as Upgrade;
@@ -385,7 +422,7 @@ ui.addEventListener("click", async (e) => {
     togglePause();
   } else if (action === "pause-controls")
     overlay(
-      `<div class="eyebrow">Controles</div><h2>Comandos de voo</h2><p>WASD / setas: mover<br>Shift / A: especial (2 cargas)<br>E / B: bomba (2 cargas)<br>Esc / P / Start: pausa<br>Mouse / toque: arraste relativo<br>Resgate: mantenha-se próximo por 1,5 s.</p>${btn("back-pause", "VOLTAR À PAUSA", "primary")}`,
+      `<div class="eyebrow">Controles</div><h2>Comandos de voo</h2><p>WASD / setas: mover<br>Q / LB: Rasante ↔ Alta (0,4 s; recarga 4 s)<br>Espaço / RT / segurar mouse: tiro manual<br>Shift / A: especial (2 cargas)<br>E / B: bomba (2 cargas)<br>Esc / P / Start: pausa<br>Mouse / toque: arraste relativo<br>Resgate: mantenha-se próximo por 1,5 s.</p>${btn("back-pause", "VOLTAR À PAUSA", "primary")}`,
     );
 });
 document.addEventListener("visibilitychange", () => {
@@ -398,6 +435,37 @@ document.addEventListener("visibilitychange", () => {
     togglePause();
   clock.reset();
   last = performance.now();
+});
+ui.addEventListener("input", (e) => {
+  const el = e.target as HTMLInputElement;
+  if (el.dataset.option === "music" || el.dataset.option === "effects") {
+    const o = document.getElementById("out-" + el.dataset.option);
+    if (o) o.textContent = el.value + "%";
+  }
+});
+ui.addEventListener("change", (e) => {
+  const el = e.target as HTMLInputElement,
+    key = el.dataset.option as keyof Preferences;
+  if (
+    ![
+      "music",
+      "effects",
+      "autoFire",
+      "showHitbox",
+      "vibration",
+      "quality",
+    ].includes(key)
+  )
+    return;
+  const p = preferences(save);
+  if (key === "music" || key === "effects") p[key] = Number(el.value) / 100;
+  else if (key === "quality") p.quality = el.value as Preferences["quality"];
+  else p[key] = el.checked;
+  save.settings.options = p;
+  store.write(save);
+  audio.configure(p);
+  renderer.configure(p);
+  if (world) world.options = { ...p };
 });
 function simulate(dt: number) {
   if (!world) return;
@@ -413,7 +481,13 @@ function simulate(dt: number) {
       world.player.x,
       world.player.y,
     );
-  for (const ev of world.events) audio.sfx(ev);
+  for (const ev of world.events) {
+    audio.sfx(ev);
+    if (ev === "hit" || ev === "explosion") {
+      if (!qaControl) hitStop = Math.max(hitStop, ev === "hit" ? 0.04 : 0.025);
+      if (world.options.vibration && ev === "hit") input.rumble();
+    }
+  }
   world.events.length = 0;
   if (world.boss && !world.boss.dead && audio.mode !== "boss")
     audio.setMode("boss");
@@ -422,7 +496,13 @@ function simulate(dt: number) {
 function frame(now: number) {
   const delta = Math.min(0.1, (now - last) / 1000);
   last = now;
-  const alpha = clock.advance(delta, paused || screen !== "game", simulate);
+  const stopping = hitStop > 0;
+  hitStop = Math.max(0, hitStop - delta);
+  const alpha = clock.advance(
+    delta,
+    paused || screen !== "game" || stopping,
+    simulate,
+  );
   renderer.render(
     world,
     paused ? 1 : alpha,
@@ -459,16 +539,25 @@ if (debug) {
       pickups: world?.pickups.map((p) => ({ ...p })),
       lasers: world?.lasers.map((l) => ({ ...l })),
       score: world?.score,
+      shots: world?.shots,
+      hits: world?.hits,
+      damageTaken: world?.damageTaken,
       scrap: world?.scrap,
       drawCalls: renderer.renderCalls,
       memory: { ...renderer.renderer.info.memory },
       visual: {
-        version: "0.3.0",
+        version: "0.4.0",
         quality: renderer.quality.level,
         viewport: renderer.metrics,
       },
       save,
       loops: audio.loops.size,
+      music: {
+        stage: audio.stage,
+        mode: audio.mode,
+        buses: audio.buses.length,
+      },
+      options: preferences(save),
     }),
     step: (ticks: number, c: Commands) => {
       if (screen !== "game" || paused) return;

@@ -16,7 +16,7 @@ export class Canyon extends T.Group {
       const g = new T.Group();
       this.tiles.push(g);
       this.add(g);
-      let seed = 449;
+      let seed = 449 + tile * 823;
       const rand = () => {
         seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
         return seed / 4294967296;

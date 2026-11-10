@@ -1,5 +1,5 @@
 import { mkdirSync } from "node:fs";
-mkdirSync("release/screenshots/v0.3", { recursive: true });
+mkdirSync("release/screenshots/v0.4", { recursive: true });
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
 import assert from "node:assert/strict";
@@ -192,9 +192,9 @@ const pilot = async (stop = 9999) =>
     };
   }, stop);
 await pilot(145);
-await page.screenshot({ path: "release/screenshots/v0.3/02-m02-gameplay.png" });
+await page.screenshot({ path: "release/screenshots/v0.4/02-m02-gameplay.png" });
 await pilot(352);
-await page.screenshot({ path: "release/screenshots/v0.3/03-serpente.png" });
+await page.screenshot({ path: "release/screenshots/v0.4/03-serpente.png" });
 const result = await pilot();
 assert.equal(result.state.state, "victory");
 assert.equal(
@@ -213,7 +213,7 @@ assert.deepEqual(result.enemies.sort(), ["E01", "E03", "E05", "E07", "E08"]);
 assert.equal(result.repairSeen, true);
 assert.deepEqual(errors, []);
 writeFileSync(
-  "release/full-m02-qa-v03.json",
+  "release/full-m02-qa-v04.json",
   JSON.stringify(
     {
       mode: "Accelerated fixed-step, real inputs, damage enabled, no profile rewards",
@@ -241,5 +241,5 @@ console.log(
   ),
 );
 await page.waitForTimeout(500);
-await page.screenshot({ path: "release/screenshots/v0.3/04-m02-result.png" });
+await page.screenshot({ path: "release/screenshots/v0.4/04-m02-result.png" });
 await browser.close();

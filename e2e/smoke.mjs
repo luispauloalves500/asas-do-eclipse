@@ -1,5 +1,5 @@
 import { mkdirSync } from "node:fs";
-mkdirSync("release/screenshots/v0.3", { recursive: true });
+mkdirSync("release/screenshots/v0.4", { recursive: true });
 import { chromium } from "playwright";
 import { createServer } from "node:http";
 import { readFile, writeFile } from "node:fs/promises";
@@ -69,7 +69,7 @@ try {
     await page.evaluate(() => typeof window.__AURORA__),
     "undefined",
   );
-  await page.screenshot({ path: "release/screenshots/v0.3/01-menu.png" });
+  await page.screenshot({ path: "release/screenshots/v0.4/01-menu.png" });
   checks.push("Normal build loads under /jogos/asas/; debug API absent");
   await page.goto(base + "?debug=qa");
   await launch();
@@ -79,16 +79,24 @@ try {
   assert.equal(dimensions.height, 900);
   assert.equal(
     await page.evaluate(() => document.documentElement.dataset.version),
-    "0.3.0",
+    "0.4.0",
   );
-  checks.push("v0.3: no side panel DOM; Three.js canvas fills 1600x900");
+  checks.push("v0.4: no side panel DOM; Three.js canvas fills 1600x900");
   const initial = await state();
   await page.keyboard.down("ArrowRight");
-  await page.waitForTimeout(400);
+  await page.waitForFunction(
+    () => window.__AURORA__.state().player.x > 1,
+    {},
+    { timeout: 8000 },
+  );
   await page.keyboard.up("ArrowRight");
   assert.ok((await state()).player.x > initial.player.x + 1);
   await page.keyboard.down("w");
-  await page.waitForTimeout(250);
+  await page.waitForFunction(
+    () => window.__AURORA__.state().player.y > -9,
+    {},
+    { timeout: 8000 },
+  );
   await page.keyboard.up("w");
   assert.ok((await state()).player.y > -9);
   checks.push("Real keyboard WASD/arrows movement");
@@ -218,7 +226,7 @@ try {
   await launch();
   await page.waitForTimeout(4700);
   maxDrawCalls = Math.max(maxDrawCalls, (await state()).drawCalls);
-  await page.screenshot({ path: "release/screenshots/v0.3/03-boss.png" });
+  await page.screenshot({ path: "release/screenshots/v0.4/03-boss.png" });
   checks.push("Boss debug entry renders and runs without runtime errors");
   const mobile = await browser.newContext({
     viewport: { width: 390, height: 844 },
@@ -254,7 +262,7 @@ try {
   const ts = await touch.evaluate(() => window.__AURORA__.state());
   assert.ok(ts.player.x > 0);
   assert.ok(ts.player.y > -9);
-  await touch.screenshot({ path: "release/screenshots/v0.3/05-mobile.png" });
+  await touch.screenshot({ path: "release/screenshots/v0.4/05-mobile.png" });
   checks.push(
     "390x844 mobile: real CDP touch relative drag and visible controls",
   );
@@ -265,24 +273,28 @@ try {
   monitor(offline);
   await offline.goto(
     pathToFileURL(resolve("release/asas-do-eclipse-m01.html")).href +
-      "?debug=qa&stage=M02",
+      "?debug=qa&stage=M03",
   );
   await offline.waitForSelector("h1");
   await offline.getByRole("button", { name: /INICIAR MISSÃO/ }).click();
   await offline.getByRole("button", { name: "INICIAR VOO ↗" }).click();
   await offline.keyboard.down("ArrowLeft");
-  await offline.waitForTimeout(300);
+  await offline.waitForFunction(
+    () => window.__AURORA__.state().player.x < -0.5,
+    {},
+    { timeout: 10000 },
+  );
   await offline.keyboard.up("ArrowLeft");
   const os = await offline.evaluate(() => window.__AURORA__.state());
   assert.ok(os.player.x < -0.5);
-  assert.equal(os.stageId, "M02");
+  assert.equal(os.stageId, "M03");
   checks.push(
     "Standalone HTML opens via file:// and plays with zero network dependencies",
   );
   await offline.close();
   assert.deepEqual(errors, []);
   await writeFile(
-    "release/browser-smoke-v03.json",
+    "release/browser-smoke-v04.json",
     JSON.stringify(
       {
         checks,
@@ -310,7 +322,7 @@ try {
     ),
   );
 } catch (error) {
-  await page.screenshot({ path: "release/screenshots/v0.3/FAILED-smoke.png" });
+  await page.screenshot({ path: "release/screenshots/v0.4/FAILED-smoke.png" });
   throw error;
 } finally {
   await browser.close();

@@ -115,6 +115,8 @@ export class Particles {
     p.color.setHex(color);
   }
   burst(x: number, y: number, size: number, color: number) {
+    this.emit(x, y, 9, 0xffe5ae, Math.min(size, 2) * 0.9, 0.14);
+    this.emit(x, y, 8.95, 0xff9854, Math.min(size, 2) * 1.15, 0.24);
     for (let i = 0; i < Math.round(24 * this.quality); i++) {
       const a = this.random() * Math.PI * 2,
         v = (1 + this.random() * 4) * size;

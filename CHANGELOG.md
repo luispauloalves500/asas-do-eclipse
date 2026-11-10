@@ -1,5 +1,20 @@
 # Histórico
 
+## v0.4.0 — 10/11/2026
+
+- Revisão autocrítica prévia documentada; menu com céu animado e porto aéreo 3D, hangar com aeronave giratória, cinco melhorias com comparação antes/depois, briefing contextual com reconhecimento 3D do chefe.
+- M01/M02: distribuição de terreno variada entre tiles, tráfego/civis decorativos, luzes e sombras de nuvens. Nenhum painel lateral no voo; HUD, medalhas e barras de módulos retrabalhados.
+- Flash de casco, faíscas, explosões mais quentes com destroços/onda, hit-stop de 25–40 ms e tremor limitado a cerca de 0,07 un. ALERTA de entrada e 3,5 s de destruição com zona segura de coleta.
+- Música sintetizada própria por missão/chefe, duas camadas com crossfade de 0,75 s; SFX de impactos, mísseis, altitude e esquiva. Um contexto/sequenciador e um loop de motor.
+- Opções acessíveis durante pausa real: volumes separados, auto-fire/manual, hitbox, vibração e qualidade automática/baixa/média/alta. Persistem sem resetar saves antigos.
+- M03 Fortaleza do Vento: picos nevados, névoa, fortalezas, pontes e turbinas gigantes; tutorial Rasante/Alta, E03/E04, E06/E10, dois resgates e Ciclone. Timeline JSON preserva a sequência do GDD.
+- E04 Lâmina: aviso de 0,9 s e investida sobre posição marcada. E10 Aríete: asas atingíveis separadamente, cada uma desativa seu bombardeio de solo.
+- Postura Q/LB/HUD/toque em todas as missões: troca de 0,4 s, recarga 4 s, sem imunidade; Rasante +20% solo/coleta 2,0; Alta +15% ar/evita ground_only. Perigos de solo usam triângulo âmbar e rastro próprio; sombras e trilhas acompanham altitude.
+- Ciclone original: helicóptero birotor blindado com módulos destrutíveis, mísseis guiados por no máximo 1,2 s, vento lateral somente visual e espirais duplas com corredor navegável. Destruir rotores remove seus emissores.
+- Vitória M02 libera M03. Vitória M03 libera A02 Bóreas (80 HP, 9,7 un/s, dano 0,92×, +10% cadência após quase-esquiva em movimento), selecionável no hangar com modelo próprio.
+- Melhorias globais de cadência (+6%/nível) e blindagem (+10 HP/nível), além de motor/canhão/coletor. Schema 2 aditivo mantém migração de todas as versões anteriores.
+- 59 testes Vitest; três playthroughs acelerados com dano/resgates/fases reais, browser desktop/móvel e regressões de reinício, áudio, persistência e HTML offline. Evidências em `release/*v04.json`, `release/screenshots/v0.4/` e `qa/reports/2026-11-10-v0.4.0.md`.
+
 ## v0.3.0 — 10/11/2026
 
 - M02 Estrada de Ferro Fantasma: cânion ocre instanciado, pontes de aço, trilhos marcados, depósitos e comboios em movimento.

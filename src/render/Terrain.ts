@@ -15,7 +15,7 @@ export class Terrain extends T.Group {
       const g = new T.Group();
       this.tiles.push(g);
       this.add(g);
-      let seed = 237;
+      let seed = 237 + tile * 821;
       const rnd = () => {
         seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
         return seed / 4294967296;

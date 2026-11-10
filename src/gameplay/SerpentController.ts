@@ -44,6 +44,7 @@ export function updateSerpent(w: World, dt: number) {
   if (b.dead || !b.cars) return;
   b.py = b.y;
   b.age += dt;
+  b.flash = Math.max(0, (b.flash || 0) - dt);
   b.y = Math.max(6.2, b.y - 2.8 * dt);
   b.invul = Math.max(0, b.invul - dt);
   for (const [i, c] of b.cars.entries()) {
@@ -135,6 +136,7 @@ export function hitSerpent(w: World, index: number, damage: number) {
     c = b.cars?.[index];
   if (!c || b.dead || b.invul > 0 || c.hp <= 0) return;
   c.hp = Math.max(0, c.hp - damage);
+  b.flash = 0.08;
   if (index === 0) b.hp = c.hp;
   else if (c.hp === 0) {
     w.parts++;

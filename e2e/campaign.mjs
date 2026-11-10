@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
-mkdirSync("release/screenshots/v0.3", { recursive: true });
+mkdirSync("release/screenshots/v0.4", { recursive: true });
 const browser = await chromium.launch({
   headless: true,
   args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
@@ -29,16 +29,16 @@ try {
   checks.push(
     "Fresh profile: M02 locked until M01 Normal victory; five route nodes",
   );
-  await page.locator('[data-action="map-select:M03"]').click();
+  await page.locator('[data-action="map-select:M04"]').click();
   assert.equal(
-    await page.locator('[data-action="map-play:M03"]').isDisabled(),
+    await page.locator('[data-action="map-play:M04"]').isDisabled(),
     true,
   );
   assert.match(
     await page.locator(".map-card").textContent(),
     /próximas versões/,
   );
-  checks.push("M03–M05 displayed but not playable");
+  checks.push("M04–M05 displayed but not playable");
   await page.evaluate(() =>
     localStorage.setItem(
       "aurora.asas.save",
@@ -61,10 +61,10 @@ try {
     await page.locator('[data-action="map-play:M02"]').isDisabled(),
     false,
   );
-  await page.screenshot({ path: "release/screenshots/v0.3/01-map.png" });
+  await page.screenshot({ path: "release/screenshots/v0.4/01-map.png" });
   await page.locator('[data-action="map-play:M02"]').click();
   assert.match(
-    await page.locator(".briefing").textContent(),
+    await page.locator(".briefing-v4").textContent(),
     /Estrada de Ferro Fantasma/,
   );
   await page.getByRole("button", { name: "INICIAR VOO ↗" }).click();
@@ -156,7 +156,7 @@ try {
   assert.equal(await touch.locator("aside.side").count(), 0);
   assert.equal((await touch.locator("canvas").boundingBox()).height, 844);
   await touch.screenshot({
-    path: "release/screenshots/v0.3/05-m02-mobile.png",
+    path: "release/screenshots/v0.4/05-m02-mobile.png",
   });
   checks.push(
     "M02 mobile portrait 390×844: actual CDP drag, fullscreen canvas, no side panels",
@@ -172,7 +172,7 @@ try {
     true,
   );
   await touch.screenshot({
-    path: "release/screenshots/v0.3/06-mobile-map.png",
+    path: "release/screenshots/v0.4/06-mobile-map.png",
   });
   checks.push(
     "Mobile map scrolls to briefing, locked play button visible and functional",
@@ -180,7 +180,7 @@ try {
   await mobile.close();
   assert.deepEqual(errors, []);
   writeFileSync(
-    "release/campaign-browser-v03.json",
+    "release/campaign-browser-v04.json",
     JSON.stringify(
       {
         checks,

@@ -1,13 +1,17 @@
+import { normalizePreferences, type Preferences } from "./Preferences";
+import type { AircraftId } from "../data/aircraft";
 import type { Campaign } from "./Campaign";
 import { upgrades, cost, type Upgrade } from "../data/upgrades";
 export interface Save {
   schemaVersion: 2;
   scrap: number;
-  upgrades: Record<Upgrade, number>;
+  upgrades: Record<"motor" | "canhao" | "ima", number> &
+    Partial<Record<"cadencia" | "blindagem", number>>;
   cleared: boolean;
   bestScore: number;
   medals: string[];
-  settings: { sound: boolean };
+  settings: { sound: boolean; options?: Preferences };
+  aircraft?: AircraftId;
   attempts: number;
   campaign?: Campaign;
 }
@@ -36,20 +40,25 @@ export function migrate(raw: unknown): Save {
   s.bestScore = finite(d.bestScore);
   s.attempts = finite(d.attempts);
   for (const k of Object.keys(upgrades) as Upgrade[])
-    s.upgrades[k] = finite(
-      d.upgrades?.[k] ?? d.hangar?.globalUpgrades?.[k],
-      upgrades[k].max,
-    );
+    if (["motor", "canhao", "ima"].includes(k) || d.upgrades?.[k] !== undefined)
+      s.upgrades[k] = finite(
+        d.upgrades?.[k] ?? d.hangar?.globalUpgrades?.[k],
+        upgrades[k].max,
+      );
   s.medals = Array.isArray(d.medals)
     ? d.medals.filter((m: unknown) => typeof m === "string").slice(0, 8)
     : [];
   s.settings.sound = d.settings?.sound !== false;
+  if (d.settings?.options)
+    s.settings.options = normalizePreferences(d.settings.options);
   if (d.campaign?.stages) {
     s.campaign = {
-      lastStage: d.campaign.lastStage === "M02" ? "M02" : "M01",
+      lastStage: ["M01", "M02", "M03"].includes(d.campaign.lastStage)
+        ? d.campaign.lastStage
+        : "M01",
       stages: {},
     };
-    for (const id of ["M01", "M02"] as const) {
+    for (const id of ["M01", "M02", "M03"] as const) {
       const v = d.campaign.stages[id];
       if (v && typeof v === "object")
         s.campaign.stages[id] = {
@@ -68,14 +77,19 @@ export function migrate(raw: unknown): Save {
     if (s.campaign.lastStage === "M02" && !s.cleared)
       s.campaign.lastStage = "M01";
   }
+  if (s.campaign?.lastStage === "M03" && !s.campaign.stages.M02?.cleared)
+    s.campaign.lastStage = s.cleared ? "M02" : "M01";
+  if (d.aircraft)
+    s.aircraft =
+      d.aircraft === "A02" && s.campaign?.stages.M03?.cleared ? "A02" : "A01";
   return s;
 }
 export function buy(s: Save, k: Upgrade) {
-  const n = s.upgrades[k],
+  const n = s.upgrades[k] || 0,
     price = cost(n);
   if (n >= upgrades[k].max || s.scrap < price) return false;
   s.scrap -= price;
-  s.upgrades[k]++;
+  s.upgrades[k] = n + 1;
   return true;
 }
 export class SaveStore {

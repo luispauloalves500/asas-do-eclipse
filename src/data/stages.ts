@@ -1,6 +1,7 @@
 import M01 from "./stages/M01.json";
 import M02 from "./stages/M02.json";
-export type StageId = "M01" | "M02";
+import M03 from "./stages/M03.json";
+export type StageId = "M01" | "M02" | "M03";
 export interface Stage {
   id: string;
   title: string;
@@ -12,8 +13,18 @@ export interface Stage {
   repairAtSeconds: number;
   convoys?: { atSeconds: number; laneX: number }[];
 }
-export const stages: Record<StageId, Stage> = { M01, M02 };
+export const stages: Record<StageId, Stage> = { M01, M02, M03 };
 export const stageInfo = {
+  M03: {
+    name: "Fortaleza do Vento",
+    boss: "Ciclone",
+    biome: "Montanhas / fortaleza aérea",
+    intro:
+      "Atravesse as turbinas de montanha. Resgate dois técnicos e derrube os rotores de Ciclone. A base guarda o interceptador Bóreas.",
+    risk: "Lâmina, Aríete e torres AA",
+    duration: "7–8 minutos",
+    base: 520,
+  },
   M01: {
     name: "Ruínas de Arkan",
     boss: "Gárgula-01",
@@ -49,7 +60,7 @@ export const actNodes = [
   {
     id: "M03",
     name: "Fortaleza do Vento",
-    brief: "Montanhas, ventos e um duelo contra Ciclone. Em produção.",
+    brief: "Domine Rasante/Alta, liberte a base e conquiste Bóreas.",
   },
   {
     id: "M04",

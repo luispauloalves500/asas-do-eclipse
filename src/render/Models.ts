@@ -306,9 +306,298 @@ export class Models {
       new T.RingGeometry(0.065, 0.105, 20),
       new T.MeshBasicMaterial({ color: P.cyan, depthTest: false }),
     );
+    hit.name = "hitbox";
     hit.position.z = 1.12;
     hit.renderOrder = 70;
     g.add(hit);
+    return this.batch(g);
+  }
+  boreas() {
+    const g = new T.Group();
+    this.plate(
+      g,
+      P.white,
+      [
+        [0, 1.5],
+        [0.2, 0.55],
+        [0.18, -0.9],
+        [-0.18, -0.9],
+        [-0.2, 0.55],
+      ],
+      0.25,
+      0.18,
+    );
+    this.ball(g, 0x234e78, 0, 0.55, 0.6, 0.17, 0.48, 0.17);
+    this.box(g, P.gold, 0, 0.95, 0.52, 0.06, 0.6, 0.05);
+    for (const sign of [-1, 1]) {
+      const wing = this.group(
+        g,
+        sign < 0 ? "wingLeft" : "wingRight",
+        sign * 0.13,
+        -0.1,
+        0.25,
+      );
+      this.plate(
+        wing,
+        0x4a7292,
+        [
+          [0, 0.5],
+          [sign * 1.45, -0.5],
+          [sign * 1.32, -0.8],
+          [sign * 0.12, -0.45],
+        ],
+        0,
+        0.1,
+      );
+      this.plate(
+        wing,
+        P.white,
+        [
+          [sign * 0.08, 0.4],
+          [sign * 1.23, -0.48],
+          [sign * 1.16, -0.57],
+          [sign * 0.1, -0.32],
+        ],
+        0.12,
+        0.05,
+      );
+      this.box(
+        wing,
+        P.cyan,
+        sign * 0.75,
+        -0.31,
+        0.24,
+        0.75,
+        0.05,
+        0.04,
+        -sign * 0.6,
+      );
+      this.glow(wing, "nav" + sign, sign * 1.35, -0.65, 0.22, P.cyan, 0.05);
+      this.cyl(g, P.dark, sign * 0.32, -0.75, 0.32, 0.13, 0.6, "y");
+      const exhaust = this.group(g, "exhaust" + sign, sign * 0.32, -1.12, 0.3);
+      this.mesh(
+        exhaust,
+        new T.ConeGeometry(0.09, 0.65, 8),
+        P.cyan,
+        0,
+        -0.15,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        Math.PI,
+      );
+      this.box(g, P.white, sign * 0.35, -0.6, 0.65, 0.08, 0.6, 0.3, sign * 0.2);
+    }
+    const hit = new T.Mesh(
+      new T.RingGeometry(0.065, 0.105, 20),
+      new T.MeshBasicMaterial({ color: P.cyan, depthTest: false }),
+    );
+    hit.name = "hitbox";
+    hit.position.z = 0.9;
+    hit.renderOrder = 70;
+    g.add(hit);
+    return this.batch(g);
+  }
+  blade() {
+    const g = new T.Group();
+    this.plate(
+      g,
+      P.black,
+      [
+        [0, -1.3],
+        [0.35, -0.2],
+        [1, 0.75],
+        [0.45, 0.65],
+        [0, 0.2],
+        [-0.45, 0.65],
+        [-1, 0.75],
+        [-0.35, -0.2],
+      ],
+      0.3,
+      0.2,
+    );
+    this.plate(
+      g,
+      P.red,
+      [
+        [0, -1.2],
+        [0.2, -0.15],
+        [0.85, 0.65],
+        [0.35, 0.5],
+        [0, 0.1],
+        [-0.35, 0.5],
+        [-0.85, 0.65],
+        [-0.2, -0.15],
+      ],
+      0.55,
+      0.12,
+    );
+    this.box(g, P.hot, 0, -0.3, 0.75, 0.08, 1.25, 0.06);
+    for (const x of [-0.35, 0.35])
+      this.glow(g, "dash" + x, x, 0.5, 0.55, P.hot, 0.1);
+    return this.batch(g);
+  }
+  ram() {
+    const g = new T.Group();
+    this.ball(g, P.plate, 0, 0, 0.55, 0.5, 1.3, 0.45);
+    this.box(g, P.black, 0, -0.6, 0.85, 0.5, 0.7, 0.15);
+    this.box(g, P.hot, 0, -0.8, 0.96, 0.28, 0.2, 0.06);
+    for (const sign of [-1, 1]) {
+      const wing = this.group(g, sign < 0 ? "wingLeft" : "wingRight");
+      this.plate(
+        wing,
+        P.red,
+        [
+          [sign * 0.25, 0.8],
+          [sign * 1.9, 0.2],
+          [sign * 1.8, -0.8],
+          [sign * 0.3, -0.6],
+        ],
+        0.4,
+        0.24,
+      );
+      for (let i = 0; i < 3; i++)
+        this.box(
+          wing,
+          P.edge,
+          sign * (0.75 + i * 0.3),
+          -0.1,
+          0.7,
+          0.12,
+          1,
+          0.06,
+        );
+      this.cyl(wing, P.black, sign * 1.35, 0, 0.3, 0.28, 0.9, "y");
+      this.glow(wing, "bombHatch", sign * 1.35, -0.5, 0.32, P.hot, 0.13);
+      const wreck = this.group(
+        g,
+        sign < 0 ? "wingLeftWreck" : "wingRightWreck",
+      );
+      this.box(wreck, P.black, sign * 0.6, 0, 0.45, 0.6, 0.45, 0.2, sign * 0.3);
+      wreck.visible = false;
+    }
+    return this.batch(g);
+  }
+  cyclone() {
+    const g = new T.Group();
+    this.ball(g, P.plate, 0, 0, 0.7, 1, 1.5, 0.55);
+    this.ball(g, 0x35717c, 0, -0.7, 1.03, 0.7, 0.5, 0.3);
+    this.box(g, P.red, 0, 0.7, 0.6, 0.8, 1.6, 0.6);
+    this.box(g, P.gold, 0, -1, 0.8, 0.12, 0.8, 0.06);
+    // Armored engine deck, long tail boom and paired gun/sensor mounts.
+    this.box(g, P.black, 0, 1.72, 0.54, 0.5, 2.7, 0.4);
+    this.box(g, P.red, 0, 1.78, 0.8, 0.36, 2.6, 0.24);
+    this.plate(
+      g,
+      P.red,
+      [
+        [-0.18, 2.5],
+        [-1.05, 2.92],
+        [-0.94, 3.2],
+        [0, 3.02],
+        [0.94, 3.2],
+        [1.05, 2.92],
+        [0.18, 2.5],
+      ],
+      0.82,
+      0.12,
+    );
+    this.box(g, P.edge, 0, 2.98, 1.03, 0.1, 0.7, 0.53);
+    for (const side of [-1, 1]) {
+      this.box(g, P.red, side * 0.79, 0.28, 1.01, 0.27, 1.25, 0.16);
+      this.box(g, P.black, side * 0.52, 0.72, 1.13, 0.29, 0.65, 0.09);
+      for (let j = 0; j < 4; j++)
+        this.box(
+          g,
+          P.edge,
+          side * 0.52,
+          0.48 + j * 0.16,
+          1.19,
+          0.27,
+          0.045,
+          0.045,
+        );
+      this.cyl(g, P.black, side * 0.58, -1.2, 0.59, 0.1, 0.95, "y");
+      this.cyl(g, P.edge, side * 0.58, -1.61, 0.59, 0.14, 0.19, "y");
+      this.glow(g, "noseLight" + side, side * 0.72, -0.98, 0.91, P.hot, 0.06);
+      this.box(g, P.black, side * 1.5, 0.23, 0.57, 2.3, 0.09, 0.16);
+      this.box(g, P.black, side * 1.5, -0.23, 0.57, 2.3, 0.09, 0.16);
+      for (let j = 0; j < 3; j++)
+        this.box(
+          g,
+          P.red,
+          side * (1.12 + j * 0.42),
+          0,
+          0.73,
+          0.17,
+          0.48,
+          0.12,
+          side * 0.32,
+        );
+    }
+
+    for (const sign of [-1, 1]) {
+      this.box(g, P.edge, sign * 1.5, 0, 0.5, 2.3, 0.4, 0.3);
+      const node = this.group(
+        g,
+        sign < 0 ? "left" : "right",
+        sign * 2.7,
+        0,
+        0.7,
+      );
+      this.cyl(node, P.red, 0, 0, 0.1, 0.62, 0.45);
+      this.cyl(node, P.gold, 0, 0, 0.35, 0.56, 0.08);
+      for (let j = 0; j < 4; j++) {
+        const a = (j * Math.PI) / 2;
+        this.cyl(
+          node,
+          P.edge,
+          Math.cos(a) * 0.49,
+          Math.sin(a) * 0.49,
+          0.43,
+          0.055,
+          0.07,
+        );
+      }
+      this.box(node, P.black, 0, -0.84, 0.12, 0.64, 0.56, 0.36);
+      for (const x of [-0.19, 0, 0.19]) {
+        this.cyl(node, P.edge, x, -1.05, 0.18, 0.075, 0.25, "y");
+        this.glow(node, "missile" + x, x, -1.19, 0.19, P.hot, 0.04);
+      }
+
+      this.cyl(node, P.black, 0, 0, 0.4, 0.35, 0.2);
+      this.glow(node, "reactor", 0, 0, 0.6, P.hot, 0.19);
+      const rotor = this.group(node, "rotor");
+      for (let i = 0; i < 4; i++)
+        this.box(
+          rotor,
+          P.edge,
+          Math.cos((i * Math.PI) / 2) * 0.7,
+          Math.sin((i * Math.PI) / 2) * 0.7,
+          0.65,
+          1.7,
+          0.12,
+          0.06,
+          (i * Math.PI) / 2,
+        );
+      this.box(node, P.red, 0, -0.5, 0.05, 0.4, 0.8, 0.3);
+      const wreck = this.group(
+        g,
+        sign < 0 ? "leftWreck" : "rightWreck",
+        sign * 2.7,
+        0,
+        0.5,
+      );
+      this.box(wreck, P.black, 0, 0, 0.2, 0.8, 0.7, 0.35);
+      this.glow(wreck, "ember", 0, 0, 0.5, P.hot, 0.14);
+      wreck.visible = false;
+    }
+    const core = this.group(g, "core");
+    this.cyl(core, P.black, 0, 0.2, 1.1, 0.45, 0.2);
+    this.glow(core, "reactor", 0, 0.2, 1.24, P.hot, 0.23);
     return this.batch(g);
   }
   raptor() {
@@ -476,6 +765,8 @@ export class Models {
     return this.batch(g);
   }
   enemy(kind: EnemyKind) {
+    if (kind === "E04") return this.blade();
+    if (kind === "E10") return this.ram();
     if (kind === "E03") return this.raptor();
     if (kind === "E07") return this.harpoon();
     if (kind === "E08") return this.seeder();
