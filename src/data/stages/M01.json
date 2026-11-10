@@ -1,0 +1,150 @@
+{
+  "id": "M01",
+  "title": "Ru\u00ednas de Arkan",
+  "scrollSpeed": 2.2,
+  "durationTargetSeconds": 410,
+  "bossEntryAtSeconds": 340,
+  "waves": [
+    {
+      "atSeconds": 40,
+      "enemy": "E01",
+      "pattern": "V_BASIC",
+      "count": 5
+    },
+    {
+      "atSeconds": 53,
+      "enemy": "E02",
+      "pattern": "V_BASIC",
+      "count": 3
+    },
+    {
+      "atSeconds": 68,
+      "enemy": "E01",
+      "pattern": "V_BASIC",
+      "count": 5
+    },
+    {
+      "atSeconds": 83,
+      "enemy": "E02",
+      "pattern": "V_BASIC",
+      "count": 3
+    },
+    {
+      "atSeconds": 98,
+      "enemy": "E01",
+      "pattern": "V_BASIC",
+      "count": 5
+    },
+    {
+      "atSeconds": 111,
+      "enemy": "E02",
+      "pattern": "V_BASIC",
+      "count": 3
+    },
+    {
+      "atSeconds": 121,
+      "enemy": "E05",
+      "pattern": "GROUND_PAIR",
+      "count": 2
+    },
+    {
+      "atSeconds": 128,
+      "enemy": "E02",
+      "pattern": "V_BASIC",
+      "count": 3
+    },
+    {
+      "atSeconds": 151,
+      "enemy": "E05",
+      "pattern": "GROUND_PAIR",
+      "count": 2
+    },
+    {
+      "atSeconds": 162,
+      "enemy": "E02",
+      "pattern": "V_BASIC",
+      "count": 3
+    },
+    {
+      "atSeconds": 169,
+      "enemy": "E05",
+      "pattern": "GROUND_PAIR",
+      "count": 2
+    },
+    {
+      "atSeconds": 199,
+      "enemy": "E05",
+      "pattern": "GROUND_PAIR",
+      "count": 2
+    },
+    {
+      "atSeconds": 205,
+      "enemy": "E02",
+      "pattern": "V_BASIC",
+      "count": 3
+    },
+    {
+      "atSeconds": 213,
+      "enemy": "E06",
+      "pattern": "LASER_TEACH",
+      "count": 1
+    },
+    {
+      "atSeconds": 224,
+      "enemy": "E01",
+      "pattern": "V_BASIC",
+      "count": 4
+    },
+    {
+      "atSeconds": 239,
+      "enemy": "E06",
+      "pattern": "LASER_TEACH",
+      "count": 2
+    },
+    {
+      "atSeconds": 251,
+      "enemy": "E01",
+      "pattern": "V_BASIC",
+      "count": 4
+    },
+    {
+      "atSeconds": 283,
+      "enemy": "E06",
+      "pattern": "LASER_TEACH",
+      "count": 2
+    },
+    {
+      "atSeconds": 294,
+      "enemy": "E01",
+      "pattern": "V_BASIC",
+      "count": 4
+    },
+    {
+      "atSeconds": 313,
+      "enemy": "E06",
+      "pattern": "LASER_TEACH",
+      "count": 2
+    },
+    {
+      "atSeconds": 324,
+      "enemy": "E01",
+      "pattern": "V_BASIC",
+      "count": 4
+    }
+  ],
+  "rescues": [
+    {
+      "atSeconds": 140,
+      "laneX": -3.2
+    },
+    {
+      "atSeconds": 185,
+      "laneX": 3
+    },
+    {
+      "atSeconds": 265,
+      "laneX": 0
+    }
+  ],
+  "repairAtSeconds": 250
+}
