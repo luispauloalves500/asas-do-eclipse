@@ -1,4 +1,9 @@
 import * as T from "three";
+import { Models } from "./Models";
+import { Terrain } from "./Terrain";
+import { Particles } from "./Particles";
+import { Quality } from "./Quality";
+import { viewport } from "../core/Viewport";
 import type { World, Enemy, Laser } from "../gameplay/World";
 const C = {
   cyan: 0x65edec,
@@ -16,7 +21,18 @@ export class Renderer {
   boss: T.Group;
   menuShip: T.Group;
   shadow: T.Mesh;
-  terrain = new T.Group();
+  terrain: Terrain;
+  models: Models;
+  particles: Particles;
+  quality = new Quality();
+  vignette: T.Mesh;
+  groundShadows: T.InstancedMesh;
+  lastShots = 0;
+  lastHP = 100;
+  lastBossHP = 600;
+  trailTime = 0;
+  shake = 0;
+  metrics = viewport(window.innerWidth, window.innerHeight);
   enemyMeshes = new Map<number, T.Group>();
   rescueMeshes = new Map<number, T.Group>();
   pickupMeshes = new Map<number, T.Group>();
@@ -52,8 +68,38 @@ export class Renderer {
     this.scene.add(light);
     this.camera.position.set(0, 0, 50);
     this.camera.lookAt(0, 0, 0);
-    this.buildTerrain();
+    this.models = new Models((color) => this.material(color));
+    this.terrain = new Terrain((color) => this.material(color));
     this.scene.add(this.terrain);
+    this.particles = new Particles(this.scene);
+    this.groundShadows = new T.InstancedMesh(
+      new T.CircleGeometry(1, 16),
+      new T.MeshBasicMaterial({
+        color: 0x071e25,
+        transparent: true,
+        opacity: 0.23,
+        depthWrite: false,
+      }),
+      80,
+    );
+    this.groundShadows.frustumCulled = false;
+    this.scene.add(this.groundShadows);
+    this.vignette = new T.Mesh(
+      new T.PlaneGeometry(1, 1),
+      new T.ShaderMaterial({
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+        uniforms: { uField: { value: new T.Vector2(1, 1) } },
+        vertexShader:
+          "varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
+        fragmentShader:
+          "uniform vec2 uField;varying vec2 vUv;void main(){vec2 d=abs(vUv-.5)*2.;float a=max(smoothstep(uField.x-.04,uField.x+.14,d.x),smoothstep(uField.y-.04,uField.y+.14,d.y));float vignette=smoothstep(.4,1.35,length(d))*.16;gl_FragColor=vec4(.015,.04,.055,a*.45+vignette);}",
+      }),
+    );
+    this.vignette.position.z = 15;
+    this.vignette.renderOrder = 75;
+    this.scene.add(this.vignette);
     this.shadow = new T.Mesh(
       new T.CircleGeometry(1, 18),
       new T.MeshBasicMaterial({
@@ -73,16 +119,31 @@ export class Renderer {
     this.boss.visible = false;
     this.scene.add(this.boss);
     const bg = new T.CircleGeometry(0.19, 10),
-      material = new T.MeshBasicMaterial({ color: 0xffffff });
+      material = new T.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+      });
     this.bullets = new T.InstancedMesh(bg, material, 600);
     this.outlines = new T.InstancedMesh(
       bg,
-      new T.MeshBasicMaterial({ color: 0x08101b }),
+      new T.MeshBasicMaterial({
+        color: 0x08101b,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+      }),
       600,
     );
     this.rims = new T.InstancedMesh(
       bg,
-      new T.MeshBasicMaterial({ color: 0xffe6bd }),
+      new T.MeshBasicMaterial({
+        color: 0xffe6bd,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+      }),
       600,
     );
     for (const m of [this.bullets, this.outlines, this.rims]) {
@@ -90,6 +151,9 @@ export class Renderer {
       m.frustumCulled = false;
       this.scene.add(m);
     }
+    this.outlines.renderOrder = 100;
+    this.rims.renderOrder = 101;
+    this.bullets.renderOrder = 102;
     this.beam = new T.Mesh(
       new T.PlaneGeometry(1, 1),
       new T.MeshBasicMaterial({
@@ -113,6 +177,10 @@ export class Renderer {
           roughness: 0.65,
           metalness: 0.35,
           flatShading: true,
+          emissive: [0x60e9df, 0x65edec, 0xff9870, 0xe8b66a].includes(color)
+            ? color
+            : 0x000000,
+          emissiveIntensity: 0.35,
         }),
       );
     return this.matCache.get(color)!;
@@ -183,259 +251,13 @@ export class Renderer {
     return m;
   }
   ship() {
-    const g = new T.Group();
-    this.wing(
-      g,
-      [
-        [0, 1.2],
-        [0.28, 0.45],
-        [0.26, -0.9],
-        [0, -1.15],
-        [-0.26, -0.9],
-        [-0.28, 0.45],
-      ],
-      C.silver,
-      0.35,
-    );
-    this.wing(
-      g,
-      [
-        [-0.2, 0.4],
-        [-1.25, -0.45],
-        [-1.15, -0.7],
-        [-0.12, -0.3],
-      ],
-      C.navy,
-      0.2,
-    );
-    this.wing(
-      g,
-      [
-        [0.2, 0.4],
-        [1.25, -0.45],
-        [1.15, -0.7],
-        [0.12, -0.3],
-      ],
-      C.navy,
-      0.2,
-    );
-    this.wing(
-      g,
-      [
-        [-0.16, -0.55],
-        [-0.75, -1],
-        [-0.55, -1.1],
-        [0.55, -1.1],
-        [0.75, -1],
-        [0.16, -0.55],
-      ],
-      C.silver,
-      0.28,
-    );
-    for (const x of [-0.75, 0.75]) {
-      this.box(g, x, -0.52, 0.42, 0.18, 0.46, 0.12, C.cyan);
-      this.cylinder(g, x * 0.65, -0.85, 0.28, 0.14, 0.7, C.navy, false);
-      this.box(g, x * 0.65, -1.2, 0.28, 0.12, 0.25, 0.12, C.amber);
-    }
-    this.box(g, 0, 0.28, 0.61, 0.23, 0.62, 0.18, 0x153341);
-    this.box(g, 0, 0.5, 0.72, 0.14, 0.23, 0.04, C.cyan);
-    this.box(g, 0, -0.5, 0.6, 0.08, 0.5, 0.12, C.amber);
-    const hit = new T.Mesh(
-      new T.RingGeometry(0.08, 0.13, 20),
-      new T.MeshBasicMaterial({ color: C.cyan }),
-    );
-    hit.position.z = 0.88;
-    g.add(hit);
-    return g;
+    return this.models.ship();
   }
   enemy(e: Enemy) {
-    const g = new T.Group();
-    if (e.kind === "E01" || e.kind === "E02") {
-      const s = e.kind === "E02" ? 1.15 : 1;
-      this.wing(
-        g,
-        [
-          [0, -0.85],
-          [0.25, -0.2],
-          [1, 0.45],
-          [0.8, 0.7],
-          [0.15, 0.35],
-          [0, 0.75],
-          [-0.15, 0.35],
-          [-0.8, 0.7],
-          [-1, 0.45],
-          [-0.25, -0.2],
-        ],
-        C.red,
-        0.2,
-      );
-      this.box(g, 0, 0, 0.44, 0.35, 1.05, 0.35, 0x502731);
-      this.box(g, 0, -0.3, 0.65, 0.2, 0.25, 0.1, 0xffba83);
-      g.scale.setScalar(s);
-    } else if (e.kind === "E05") {
-      for (const x of [-0.65, 0.65])
-        this.box(g, x, 0, 0.15, 0.4, 1.8, 0.35, 0x111e23);
-      this.box(g, 0, 0, 0.3, 1.1, 1.5, 0.48, 0x75504d);
-      this.cylinder(g, 0, 0, 0.7, 0.52, 0.4, C.red);
-      for (const x of [-0.23, 0.23])
-        this.cylinder(g, x, -0.65, 0.75, 0.095, 1.2, 0x2c222b, false);
-      this.box(g, 0, 0.4, 0.66, 0.7, 0.15, 0.1, 0xff7865);
-    } else {
-      this.cylinder(g, 0, 0, 0.18, 0.9, 0.4, 0x383d3d);
-      this.cylinder(g, 0, 0, 0.65, 0.4, 0.65, C.red);
-      for (const x of [-0.55, 0.55]) {
-        this.box(g, x, 0, 0.75, 0.16, 0.6, 0.3, 0x8f6360);
-        this.box(g, x, -0.3, 1, 0.22, 0.25, 0.2, 0xff9575);
-      }
-      this.cylinder(g, 0, 0, 1, 0.3, 0.2, 0xff403e);
-    }
-    return g;
+    return this.models.enemy(e.kind);
   }
   makeBoss() {
-    const g = new T.Group();
-    for (const x of [-3.1, 3.1]) {
-      this.box(g, x, 0, 0.2, 1.1, 4.3, 0.7, 0x111c24);
-      for (let y = -1.5; y <= 1.5; y += 0.6)
-        this.box(g, x, y, 0.7, 1.15, 0.15, 0.15, 0x565554);
-    }
-    this.wing(
-      g,
-      [
-        [-2.7, -1.8],
-        [2.7, -1.8],
-        [3, 1.5],
-        [2.5, 2],
-        [-2.5, 2],
-        [-3, 1.5],
-      ],
-      0x5c343e,
-      0.5,
-    );
-    this.box(g, 0, 0.8, 0.8, 2.1, 2.7, 0.7, 0x8f4948);
-    for (const x of [-2.6, 2.6]) {
-      const part = new T.Group();
-      part.name = x < 0 ? "left" : "right";
-      part.position.x = x;
-      part.position.y = -0.4;
-      this.cylinder(part, 0, 0, 1, 0.85, 0.6, 0xc4514b);
-      this.cylinder(part, 0, -1.0, 1.2, 0.22, 2, 0x242b32, false);
-      this.box(part, 0, 0, 1.4, 0.6, 0.45, 0.14, 0xffaa78);
-      g.add(part);
-    }
-    const core = new T.Group();
-    core.name = "core";
-    this.cylinder(core, 0, 0, 1.4, 0.8, 0.4, 0x4d212e);
-    this.cylinder(core, 0, 0, 1.65, 0.5, 0.18, 0xff674f);
-    for (let i = 0; i < 4; i++)
-      this.box(
-        core,
-        Math.cos((i * Math.PI) / 2) * 0.68,
-        Math.sin((i * Math.PI) / 2) * 0.68,
-        1.65,
-        0.18,
-        0.18,
-        0.1,
-        0xffc085,
-      );
-    g.add(core);
-    return g;
-  }
-  buildTerrain() {
-    const ground = this.box(this.terrain, 0, 0, -1, 100, 180, 0.3, 0x213b36);
-    ground.name = "sol";
-    // One continuous meandering river, baked geometry, no external art.
-    const vertices: number[] = [],
-      indices: number[] = [];
-    for (let i = 0; i <= 140; i++) {
-      const y = -70 + i;
-      const c = Math.sin(y * 0.095) * 1.5;
-      vertices.push(c - 2.6, y, -0.78, c + 2.6, y, -0.78);
-      if (i < 140) {
-        const j = i * 2;
-        indices.push(j, j + 1, j + 2, j + 1, j + 3, j + 2);
-      }
-    }
-    const geo = new T.BufferGeometry();
-    geo.setAttribute("position", new T.Float32BufferAttribute(vertices, 3));
-    geo.setIndex(indices);
-    geo.computeVertexNormals();
-    const river = new T.Mesh(geo, this.material(0x174b59));
-    this.terrain.add(river);
-    const batches = new Map<
-      number,
-      {
-        x: number;
-        y: number;
-        z: number;
-        sx: number;
-        sy: number;
-        sz: number;
-        rot: number;
-      }[]
-    >();
-    let seed = 43;
-    const rnd = () => {
-      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-      return seed / 4294967296;
-    };
-    const add = (
-      c: number,
-      x: number,
-      y: number,
-      z: number,
-      sx: number,
-      sy: number,
-      sz: number,
-      rot = 0,
-    ) => {
-      if (!batches.has(c)) batches.set(c, []);
-      batches.get(c)!.push({ x, y, z, sx, sy, sz, rot });
-    };
-    for (let i = 0; i < 170; i++) {
-      const y = rnd() * 112 - 56,
-        x = (rnd() < 0.5 ? -1 : 1) * (4 + rnd() * 19),
-        s = 0.4 + rnd() * 1.2;
-      if (i % 3 === 0) {
-        add(0x52615a, x, y, -0.1, s, s * 1.4, 0.6 + rnd() * 1.6, rnd() * 0.4);
-        add(0x2e4545, x + 0.1, y, 0.6, s * 0.8, s * 0.8, 0.1);
-      } else {
-        add(0x294b3d, x, y, -0.4, s * 1.5, s * 1.4, 0.6, rnd());
-        add(0x39634c, x, y, 0.05, s * 0.7, s * 0.7, 1, rnd());
-      }
-    }
-    for (const x of [-6.8, 6.8]) {
-      add(0x374745, x, 0, -0.6, 1.5, 140, 0.15);
-      for (let y = -65; y < 70; y += 3)
-        add(0x77877a, x, y, -0.5, 0.08, 1, 0.04);
-    }
-    for (const y of [-40, -4, 34]) {
-      add(0x59635c, 0, y, -0.45, 17, 2.8, 0.4);
-      for (const side of [-1, 1])
-        add(0xa3aaa0, 0, y + side * 1.35, -0.1, 17, 0.12, 0.5);
-      for (let x = -8; x <= 8; x += 2)
-        add(0x263c3c, x, y, -0.2, 0.12, 2.5, 0.45);
-    }
-    // Dam gates and amber beacon strip.
-    add(0x7c8072, 0, 20, -0.15, 13, 3, 0.7);
-    for (let x = -5; x <= 5; x += 2) {
-      add(0x20383a, x, 19.7, 0.3, 0.9, 2, 0.2);
-      add(0xffbc65, x, 18.4, 0.2, 0.4, 0.12, 0.1);
-    }
-    for (const [color, items] of batches) {
-      const batch = new T.InstancedMesh(
-        new T.BoxGeometry(1, 1, 1),
-        this.material(color),
-        items.length,
-      );
-      items.forEach((it, i) => {
-        this.dummy.position.set(it.x, it.y, it.z);
-        this.dummy.scale.set(it.sx, it.sy, it.sz);
-        this.dummy.rotation.set(0, 0, it.rot);
-        this.dummy.updateMatrix();
-        batch.setMatrixAt(i, this.dummy.matrix);
-      });
-      this.terrain.add(batch);
-    }
+    return this.models.boss();
   }
   setMenu(menu: boolean) {
     if (this.menu === menu) return;
@@ -443,18 +265,41 @@ export class Renderer {
     this.resize();
   }
   resize() {
-    const w = this.menu
-        ? window.innerWidth
-        : Math.min(window.innerWidth, (window.innerHeight * 16) / 28),
-      h = this.menu ? window.innerHeight : (w * 28) / 16;
+    const w = window.innerWidth,
+      h = window.innerHeight;
+    this.metrics = viewport(w, h);
     this.host.style.width = `${w}px`;
     this.host.style.height = `${h}px`;
     this.renderer.setSize(w, h);
-    this.camera.left = (-14 * w) / h;
-    this.camera.right = (14 * w) / h;
-    this.camera.top = 14;
-    this.camera.bottom = -14;
+    const worldWidth = this.menu ? (28 * w) / h : this.metrics.worldWidth,
+      worldHeight = this.menu ? 28 : this.metrics.worldHeight;
+    this.camera.left = -worldWidth / 2;
+    this.camera.right = worldWidth / 2;
+    this.camera.top = worldHeight / 2;
+    this.camera.bottom = -worldHeight / 2;
     this.camera.updateProjectionMatrix();
+    this.vignette.scale.set(worldWidth, worldHeight, 1);
+    (this.vignette.material as T.ShaderMaterial).uniforms.uField.value.set(
+      16 / worldWidth,
+      28 / worldHeight,
+    );
+  }
+  animateShip(ship: T.Group, vx: number, vy: number) {
+    for (const side of [-1, 1]) {
+      const wing = ship.getObjectByName(side < 0 ? "wingLeft" : "wingRight");
+      if (wing) {
+        wing.rotation.y = side * 0.07 + vx * 0.015;
+        wing.rotation.x = vy * 0.008;
+      }
+      const exhaust = ship.getObjectByName("exhaust" + side);
+      if (exhaust)
+        exhaust.scale.y =
+          0.8 +
+          Math.sin(this.menuTime * 44 + side) * 0.12 +
+          Math.abs(vy) * 0.05;
+      const nav = ship.getObjectByName("nav" + side);
+      if (nav) nav.visible = Math.sin(this.menuTime * 2 + side) > -0.6;
+    }
   }
   lerp(a: number, b: number, t: number) {
     return a + (b - a) * t;
@@ -463,8 +308,27 @@ export class Renderer {
     this.menuTime += Math.min(delta, 0.1);
     this.dummy.rotation.set(0, 0, 0);
     this.dummy.scale.setScalar(1);
-    this.terrain.position.y =
-      ((world && !this.menu ? world.scroll : this.menuTime * 0.55) % 56) - 28;
+    const visualDt = world?.state === "dying" ? delta * 0.2 : delta;
+    if (this.quality.sample(delta)) {
+      this.renderer.setPixelRatio(
+        Math.min(devicePixelRatio, 1.5) * this.quality.level,
+      );
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    this.particles.quality = this.quality.level;
+    this.terrain.update(
+      world && !this.menu ? world.scroll : this.menuTime * 0.55,
+      this.menuTime,
+      this.quality.level,
+      this.menu ? 28 : this.metrics.worldHeight,
+    );
+    this.vignette.visible = !this.menu;
+    this.groundShadows.visible = !this.menu;
+    this.shake = Math.max(0, this.shake - visualDt * 0.18);
+    const sx = Math.sin(this.menuTime * 83) * this.shake,
+      sy = Math.cos(this.menuTime * 71) * this.shake;
+    this.camera.position.set(sx, sy, 50);
+    this.camera.lookAt(sx, sy, 0);
     this.menuShip.visible = this.menu;
     this.shadow.visible = !this.menu && !!world && world.player.hp > 0;
     this.player.visible = !this.menu && !!world && world.player.hp > 0;
@@ -475,9 +339,10 @@ export class Renderer {
         -0.3,
         3,
       );
-      this.menuShip.scale.setScalar(3.2);
+      this.menuShip.scale.setScalar(3.5);
+      this.animateShip(this.menuShip, 0, 0);
       this.menuShip.rotation.set(
-        0.12,
+        0.28,
         Math.sin(this.menuTime * 0.3) * 0.16,
         -0.38 + Math.sin(this.menuTime * 0.2) * 0.04,
       );
@@ -487,12 +352,13 @@ export class Renderer {
       this.player.position.set(
         this.lerp(p.px, p.x, alpha),
         this.lerp(p.py, p.y, alpha),
-        1.3,
+        6,
       );
+      this.animateShip(this.player, p.vx, p.vy);
       this.shadow.position.set(
-        this.player.position.x + 0.35,
-        this.player.position.y - 0.4,
-        0.08,
+        this.player.position.x + 0.6,
+        this.player.position.y - 0.55,
+        0.15,
       );
       this.player.rotation.set(
         (p.vy / 8.2) * 0.14,
@@ -503,7 +369,13 @@ export class Renderer {
         p.hp > 0 && !(p.invul > 0 && Math.floor(this.menuTime * 12) % 2 === 0);
       if (world.boss) {
         const b = world.boss;
-        this.boss.position.set(b.x, this.lerp(b.py, b.y, alpha), 0.1);
+        this.boss.position.set(b.x, this.lerp(b.py, b.y, alpha), 2.5);
+        this.boss.getObjectByName("leftWreck")!.visible = b.left <= 0;
+        this.boss.getObjectByName("rightWreck")!.visible = b.right <= 0;
+        if (b.hp < this.lastBossHP && b.hp > 0) {
+          this.particles.emit(0, b.y, 10, 0xffffff, 1, 0.07);
+        }
+        this.lastBossHP = b.hp;
         this.boss.getObjectByName("left")!.visible = b.left > 0;
         this.boss.getObjectByName("right")!.visible = b.right > 0;
         this.boss
@@ -516,12 +388,46 @@ export class Renderer {
       this.syncObjects(world, alpha);
       this.syncLasers(world);
       this.syncEffects(world);
+      let shadowCount = 0;
+      for (const e of world.enemies) {
+        this.dummy.position.set(e.x + 0.4, e.y - 0.4, 0.13);
+        this.dummy.scale.set(e.r * 1.4, e.r * 0.8, 1);
+        this.dummy.rotation.set(0, 0, 0);
+        this.dummy.updateMatrix();
+        this.groundShadows.setMatrixAt(shadowCount++, this.dummy.matrix);
+      }
+      this.groundShadows.count = shadowCount;
+      this.groundShadows.instanceMatrix.needsUpdate = true;
+      this.trailTime += visualDt;
+      if (p.hp > 0 && this.trailTime > 0.035) {
+        this.trailTime = 0;
+        for (const x of [-0.39, 0.39])
+          this.particles.emit(
+            p.x + x,
+            p.y - 1.2,
+            5.9,
+            0x76cfd0,
+            0.14,
+            0.38,
+            -p.vx * 0.04,
+            -1.8,
+          );
+      }
+      if (world.shots !== this.lastShots) {
+        this.particles.emit(p.x, p.y + 1.1, 10, 0xe7ffff, 0.42, 0.055);
+        this.lastShots = world.shots;
+      }
+      if (p.hp < this.lastHP) {
+        this.particles.emit(p.x, p.y, 10, 0xb7faff, 1.5, 0.12);
+        this.shake = Math.max(this.shake, 0.035);
+      }
+      this.lastHP = p.hp;
       let count = 0;
       for (const b of world.pool.items) {
         if (!b.active) continue;
         const x = this.lerp(b.px, b.x, alpha),
           y = this.lerp(b.py, b.y, alpha);
-        this.dummy.position.set(x, y, 5.1);
+        this.dummy.position.set(x, y, 12.1);
         this.dummy.scale.set(b.friendly ? 0.58 : 1, b.friendly ? 1.5 : 1, 1);
         this.dummy.updateMatrix();
         this.bullets.setMatrixAt(count, this.dummy.matrix);
@@ -529,11 +435,11 @@ export class Renderer {
           count,
           this.colors.set(b.friendly ? C.cyan : 0xff785e),
         );
-        this.dummy.position.z = 5;
+        this.dummy.position.z = 12;
         this.dummy.scale.multiplyScalar(1.35);
         this.dummy.updateMatrix();
         this.rims.setMatrixAt(count, this.dummy.matrix);
-        this.dummy.position.z = 4.95;
+        this.dummy.position.z = 11.95;
         this.dummy.scale.multiplyScalar(1.4);
         this.dummy.updateMatrix();
         this.outlines.setMatrixAt(count, this.dummy.matrix);
@@ -547,7 +453,7 @@ export class Renderer {
       if (this.bullets.instanceColor)
         this.bullets.instanceColor.needsUpdate = true;
       this.beam.visible = p.beam > 0;
-      this.beam.position.set(p.x, (p.y + 15) / 2, 4.8);
+      this.beam.position.set(p.x, (p.y + 15) / 2, 11);
       this.beam.scale.set(0.8, 15 - p.y, 1);
     } else {
       for (const m of [this.bullets, this.rims, this.outlines, this.beam])
@@ -561,6 +467,11 @@ export class Renderer {
       ])
         for (const m of maps.values()) m.visible = false;
     }
+    this.particles.points.visible = this.particles.debris.visible = !this.menu;
+    this.particles.update(
+      visualDt,
+      this.metrics.scale * this.renderer.getPixelRatio(),
+    );
     this.renderer.render(this.scene, this.camera);
     this.renderCalls = this.renderer.info.render.calls;
   }
@@ -583,9 +494,20 @@ export class Renderer {
       m.position.set(
         this.lerp(e.px, e.x, a),
         this.lerp(e.py, e.y, a),
-        e.kind === "E05" || e.kind === "E06" ? 0.05 : 1,
+        e.kind === "E05" || e.kind === "E06" ? 2.1 : 6,
       );
       m.rotation.z = e.kind === "E02" ? Math.cos(e.age * 1.7) * 0.15 : 0;
+      if (m.userData.hp !== undefined && e.hp < m.userData.hp)
+        this.particles.emit(e.x, e.y, 10, 0xffedbf, 0.7, 0.075);
+      m.userData.hp = e.hp;
+      const turret = m.getObjectByName("turret");
+      if (turret) {
+        const angle = Math.atan2(e.aimX - e.x, -(e.aimY - e.y));
+        turret.rotation.z = -angle;
+      }
+      if (e.state === "ATTACK" && m.userData.state !== "ATTACK")
+        this.particles.emit(e.x, e.y - 0.8, 10, 0xffba7f, 0.55, 0.08);
+      m.userData.state = e.state;
       const s = e.state === "TELEGRAPH" ? 1 + Math.sin(e.age * 20) * 0.025 : 1;
       m.scale.setScalar(s);
     }
@@ -627,7 +549,7 @@ export class Renderer {
         this.scene.add(m);
       }
       m.visible = true;
-      m.position.set(r.x, this.lerp(r.py, r.y, a), 1);
+      m.position.set(r.x, this.lerp(r.py, r.y, a), 3);
       m.getObjectByName("progress")!.scale.setScalar(
         Math.max(0.01, r.progress),
       );
@@ -645,7 +567,18 @@ export class Renderer {
         m = new T.Group();
         if (p.kind === "scrap") {
           this.box(m, 0, 0, 0, 0.35, 0.35, 0.2, C.amber, Math.PI / 4);
-          m.add(this.ring(0.32, 0xffd695, 0.025));
+          m.add(this.ring(0.48, 0xffd695, 0.025));
+          const halo = new T.Mesh(
+            new T.CircleGeometry(0.7, 24),
+            new T.MeshBasicMaterial({
+              color: 0xffbb69,
+              transparent: true,
+              opacity: 0.13,
+              depthWrite: false,
+            }),
+          );
+          halo.position.z = -0.1;
+          m.add(halo);
         } else {
           this.box(m, 0, 0, 0, 0.75, 0.75, 0.2, 0xf1f0d7);
           this.box(m, 0, 0, 0.2, 0.16, 0.55, 0.05, 0x299c93);
@@ -655,8 +588,9 @@ export class Renderer {
         this.scene.add(m);
       }
       m.visible = p.life > 3 || Math.floor(p.life * 5) % 2 === 0;
-      m.position.set(this.lerp(p.px, p.x, a), this.lerp(p.py, p.y, a), 3);
+      m.position.set(this.lerp(p.px, p.x, a), this.lerp(p.py, p.y, a), 9.5);
       m.rotation.z = this.menuTime * 0.8;
+      m.scale.setScalar(1 + Math.sin(this.menuTime * 4) * 0.07);
     }
   }
   syncLasers(w: World) {
@@ -681,13 +615,14 @@ export class Renderer {
           }),
         );
         m.add(plane);
+        m.renderOrder = 96;
         this.laserMeshes.set(l.id, m);
         this.scene.add(m);
       }
       const firing = l.age > l.warn + 0.15;
       const len = Math.hypot(l.tx - l.x, l.ty - l.y);
       m.visible = true;
-      m.position.set((l.x + l.tx) / 2, (l.y + l.ty) / 2, 4.4);
+      m.position.set((l.x + l.tx) / 2, (l.y + l.ty) / 2, 11.4);
       m.rotation.z = -Math.atan2(l.tx - l.x, l.ty - l.y);
       m.scale.set(firing ? l.width : 0.045, len, 1);
       const mat = (m.children[0] as T.Mesh).material as T.MeshBasicMaterial;
@@ -707,12 +642,19 @@ export class Renderer {
     for (const f of w.fx) {
       let m = this.fxMeshes.get(f.id);
       if (!m) {
-        m = this.ring(1, parseInt(f.color.slice(1), 16), 0.12);
+        m = this.ring(1, parseInt(f.color.slice(1), 16), 0.09);
+        this.particles.burst(
+          f.x,
+          f.y,
+          Math.min(f.size, 2),
+          parseInt(f.color.slice(1), 16),
+        );
+        if (f.size > 1.4) this.shake = Math.max(this.shake, 0.025);
         this.fxMeshes.set(f.id, m);
         this.scene.add(m);
       }
       m.visible = true;
-      m.position.set(f.x, f.y, 3.8);
+      m.position.set(f.x, f.y, 9.8);
       m.scale.setScalar(0.1 + (f.age / f.life) * f.size);
       (m.material as T.MeshBasicMaterial).opacity = (1 - f.age / f.life) * 0.75;
     }
@@ -732,6 +674,11 @@ export class Renderer {
     });
   }
   clearSession() {
+    this.particles.clear();
+    this.lastShots = 0;
+    this.lastHP = 100;
+    this.lastBossHP = 600;
+    this.shake = 0;
     for (const map of [
       this.enemyMeshes,
       this.rescueMeshes,

@@ -538,64 +538,6 @@ small {
   height: 2px;
   margin: 5px 0;
 }
-.side {
-  position: absolute;
-  top: 12vh;
-  width: 230px;
-}
-.side.left {
-  right: calc(50% + 28.571429vh + 48px);
-}
-.side.right {
-  left: calc(50% + 28.571429vh + 48px);
-}
-.side h3 {
-  font-size: 24px;
-  line-height: 1.1;
-  margin: 16px 0;
-}
-.side p {
-  font-size: 11px;
-}
-.side .number {
-  font-size: 60px;
-  letter-spacing: -0.08em;
-  color: #b5c6bd22;
-  font-weight: 800;
-}
-.side .stat {
-  padding: 17px 0;
-  border-top: 1px solid var(--line);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.side .stat b {
-  font-family: monospace;
-  font-size: 19px;
-  font-weight: 500;
-  color: var(--gold);
-}
-.side .controls {
-  font-size: 10px;
-  line-height: 2.5;
-  color: #a3bab3;
-}
-.side .controls kbd {
-  display: inline-block;
-  min-width: 60px;
-  color: #dfebe4;
-  font: 10px monospace;
-}
-.side .tag {
-  color: var(--cyan);
-  border: 1px solid #79e7e247;
-  padding: 6px 8px;
-  font-size: 8px;
-  letter-spacing: 0.12em;
-  display: inline-block;
-  margin-top: 12px;
-}
 .overlay {
   position: absolute;
   inset: 0;
@@ -720,18 +662,6 @@ a {
   color: var(--cyan);
 }
 @media (max-width: 1100px) {
-  .side {
-    width: 160px;
-  }
-  .side.left {
-    right: calc(50% + 28.571429vh + 22px);
-  }
-  .side.right {
-    left: calc(50% + 28.571429vh + 22px);
-  }
-  .side .number {
-    font-size: 40px;
-  }
   .menu-copy {
     top: 24vh;
   }
@@ -748,9 +678,6 @@ a {
   }
 }
 @media (max-width: 850px) {
-  .side {
-    display: none;
-  }
   .menu-copy {
     top: 22vh;
     left: 7vw;
@@ -931,4 +858,124 @@ a {
   top: 50%;
   height: min(100vh, 175vw);
   transform: translate(-50%, -50%);
+}
+
+/* v0.2: one edge-to-edge Three.js world, with only the central combat HUD. */
+#stage {
+  inset: 0;
+  left: 0;
+  top: 0;
+  transform: none;
+  width: 100vw !important;
+  height: 100vh !important;
+  border: 0;
+  box-shadow: none;
+}
+.field-ui {
+  height: min(100vh, 175vw);
+  width: min(100vw, 57.142857vh);
+}
+.flight-strip {
+  position: absolute;
+  top: 82px;
+  left: 17px;
+  right: 17px;
+  display: flex;
+  justify-content: space-between;
+  font: 8px monospace;
+  letter-spacing: 0.1em;
+  color: #c9d9c4;
+  text-shadow: 0 2px 3px #10251b;
+  opacity: 0.8;
+}
+.flight-strip b {
+  font-weight: 400;
+  color: #f0c887;
+}
+.hud-top {
+  padding: 14px 16px 10px;
+  background: linear-gradient(#061b23dd, #0a202e88, transparent);
+}
+.hud-top b {
+  font-size: 13px;
+}
+.score b {
+  font-size: 17px;
+}
+.hud-bottom button {
+  background: #09212cac;
+  border-color: #809f8e55;
+  backdrop-filter: blur(3px);
+  padding: 10px 12px;
+  min-width: 105px;
+}
+.boss-hud {
+  top: 106px;
+  background: #10212cbb;
+  backdrop-filter: blur(4px);
+}
+.radio {
+  background: #081b24b0;
+  backdrop-filter: blur(3px);
+  font-size: 10px;
+  bottom: 90px;
+}
+@media (max-width: 600px) {
+  .flight-strip {
+    top: 80px;
+  }
+  .boss-hud {
+    top: 102px;
+  }
+  .hud-top {
+    padding: 12px;
+  }
+  .radio {
+    font-size: 10px;
+  }
+  .hud-bottom {
+    bottom: 12px;
+  }
+}
+/* Keep the boss silhouette below its compact status strip, including short mobile fields. */
+.field-ui:has(.boss-hud) .flight-strip {
+  display: none;
+}
+.boss-hud {
+  top: 78px;
+  padding: 8px 12px;
+}
+.boss-hud .boss-name {
+  font-size: 9px;
+}
+.boss-hud .bar {
+  height: 4px;
+  margin: 5px 0;
+}
+.part-bars {
+  font-size: 7px;
+}
+.part-bars .bar {
+  height: 2px;
+  margin: 3px 0;
+}
+@media (max-width: 600px) {
+  .boss-hud {
+    top: 76px;
+    padding: 6px 10px;
+  }
+  .boss-hud .boss-name {
+    font-size: 8px;
+  }
+  .boss-hud .bar {
+    margin: 4px 0;
+    height: 3px;
+  }
+  .part-bars {
+    font-size: 6px;
+  }
+  .part-bars .bar {
+    height: 2px;
+    margin: 2px 0;
+  }
 }

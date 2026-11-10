@@ -5,7 +5,7 @@ await copyFile("dist-single/index.html", "release/asas-do-eclipse-m01.html");
 await copyFile("ASSET_LICENSES.md", "dist/THIRD_PARTY_NOTICES.txt");
 await writeFile(
   "dist/LEIA-ME.txt",
-  "ASAS DO ECLIPSE — M01 v0.1.0\nSirva esta pasta por HTTP, inclusive em subpastas.\nPara abrir sem servidor, use release/asas-do-eclipse-m01.html.\nWASD/setas: mover; Shift: raio; E: bomba; Esc/P: pausa.\nArraste mouse/toque para mover.\n",
+  "ASAS DO ECLIPSE — M01 v0.2.0\nSirva esta pasta por HTTP, inclusive em subpastas.\nPara abrir sem servidor, use release/asas-do-eclipse-m01.html.\nWASD/setas: mover; Shift: raio; E: bomba; Esc/P: pausa.\nArraste mouse/toque para mover.\n",
 );
 execFileSync("python3", [
   "-c",

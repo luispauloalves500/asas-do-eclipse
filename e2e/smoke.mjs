@@ -1,3 +1,5 @@
+import { mkdirSync } from "node:fs";
+mkdirSync("release/screenshots/v0.2", { recursive: true });
 import { chromium } from "playwright";
 import { createServer } from "node:http";
 import { readFile, writeFile } from "node:fs/promises";
@@ -43,7 +45,7 @@ const browser = await chromium.launch({
 const errors = [],
   checks = [];
 let maxDrawCalls = 0;
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
 function monitor(p) {
   p.on("pageerror", (e) => errors.push(e.message));
   p.on("console", (m) => {
@@ -67,10 +69,19 @@ try {
     await page.evaluate(() => typeof window.__AURORA__),
     "undefined",
   );
-  await page.screenshot({ path: "release/screenshots/01-menu.png" });
+  await page.screenshot({ path: "release/screenshots/v0.2/01-menu.png" });
   checks.push("Normal build loads under /jogos/asas/; debug API absent");
   await page.goto(base + "?debug=qa");
   await launch();
+  assert.equal(await page.locator("aside.side").count(), 0);
+  const dimensions = await page.locator("#stage canvas").boundingBox();
+  assert.equal(dimensions.width, 1600);
+  assert.equal(dimensions.height, 900);
+  assert.equal(
+    await page.evaluate(() => document.documentElement.dataset.version),
+    "0.2.0",
+  );
+  checks.push("v0.2: no side panel DOM; Three.js canvas fills 1600x900");
   const initial = await state();
   await page.keyboard.down("ArrowRight");
   await page.waitForTimeout(400);
@@ -202,7 +213,7 @@ try {
   await launch();
   await page.waitForTimeout(4700);
   maxDrawCalls = Math.max(maxDrawCalls, (await state()).drawCalls);
-  await page.screenshot({ path: "release/screenshots/03-boss.png" });
+  await page.screenshot({ path: "release/screenshots/v0.2/03-boss.png" });
   checks.push("Boss debug entry renders and runs without runtime errors");
   const mobile = await browser.newContext({
     viewport: { width: 390, height: 844 },
@@ -232,10 +243,13 @@ try {
     touchPoints: [],
   });
   await touch.waitForTimeout(150);
+  const mobileCanvas = await touch.locator("#stage canvas").boundingBox();
+  assert.equal(mobileCanvas.width, 390);
+  assert.equal(mobileCanvas.height, 844);
   const ts = await touch.evaluate(() => window.__AURORA__.state());
   assert.ok(ts.player.x > 0);
   assert.ok(ts.player.y > -9);
-  await touch.screenshot({ path: "release/screenshots/05-mobile.png" });
+  await touch.screenshot({ path: "release/screenshots/v0.2/05-mobile.png" });
   checks.push(
     "390x844 mobile: real CDP touch relative drag and visible controls",
   );
@@ -262,7 +276,7 @@ try {
   await offline.close();
   assert.deepEqual(errors, []);
   await writeFile(
-    "release/browser-smoke.json",
+    "release/browser-smoke-v02.json",
     JSON.stringify(
       {
         checks,
@@ -270,7 +284,7 @@ try {
         maxDrawCalls,
         geometryCounts: memories,
         browser: browser.version(),
-        viewport: "1440x1000 + 390x844",
+        viewport: "1600x900 + 390x844",
       },
       null,
       2,
@@ -290,7 +304,7 @@ try {
     ),
   );
 } catch (error) {
-  await page.screenshot({ path: "release/screenshots/FAILED-smoke.png" });
+  await page.screenshot({ path: "release/screenshots/v0.2/FAILED-smoke.png" });
   throw error;
 } finally {
   await browser.close();

@@ -11,6 +11,8 @@ import { World } from "../gameplay/World";
 import { BulletPool } from "../gameplay/EntityPool";
 import mission from "../data/stages/M01.json";
 import { InputRouter } from "../input/InputRouter";
+import { viewport } from "../core/Viewport";
+import { Quality } from "../render/Quality";
 const none = { x: 0, y: 0, special: false, bomb: false };
 describe("Relógio fixo", () => {
   for (const fps of [30, 60, 120])
@@ -245,5 +247,45 @@ describe("Entrada relativa", () => {
     input.consumeDrag(0, 0, 6.87, -9);
     expect(input.dragX).toBe(0);
     vi.unstubAllGlobals();
+  });
+});
+
+// v0.2 presentation regressions do not alter the combat simulation.
+describe("Viewport e qualidade v0.2", () => {
+  it("mantém 16×28 inteiros e preenche 16:9 com mundo estendido", () => {
+    const v = viewport(1600, 900);
+    expect(v.fieldHeight).toBeCloseTo(900);
+    expect(v.fieldWidth).toBeCloseTo((900 * 16) / 28);
+    expect(v.worldWidth).toBeGreaterThan(16);
+    expect(v.worldHeight).toBeCloseTo(28);
+  });
+  it("em retrato mantém campo completo e estende mundo acima/abaixo", () => {
+    const v = viewport(390, 844);
+    expect(v.fieldWidth).toBe(390);
+    expect(v.fieldHeight).toBe(682.5);
+    expect(v.worldWidth).toBe(16);
+    expect(v.worldHeight).toBeGreaterThan(28);
+  });
+  it("reduz só apresentação sob frame time alto", () => {
+    const q = new Quality();
+    for (let i = 0; i < 240; i++) q.sample(1 / 20);
+    expect(q.level).toBeLessThan(1);
+    expect(q.level).toBeGreaterThanOrEqual(0.55);
+    const before = q.level;
+    q.sample(0);
+    expect(q.level).toBe(before);
+  });
+  it("save real v0.1 permanece compatível sem perda de saldo, medalhas ou upgrades", () => {
+    const legacy = {
+      schemaVersion: 2,
+      scrap: 465,
+      upgrades: { motor: 2, canhao: 1, ima: 3 },
+      cleared: true,
+      bestScore: 12775,
+      medals: ["clear", "rescue", "survive"],
+      settings: { sound: false },
+      attempts: 4,
+    };
+    expect(migrate(legacy)).toEqual(legacy);
   });
 });

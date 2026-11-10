@@ -1,3 +1,5 @@
+import { mkdirSync } from "node:fs";
+mkdirSync("release/screenshots/v0.2", { recursive: true });
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
 import assert from "node:assert/strict";
@@ -5,7 +7,7 @@ const browser = await chromium.launch({
   headless: true,
   args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
 });
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 page.on("console", (m) => {
@@ -139,7 +141,7 @@ assert.deepEqual(result.enemies.sort(), ["E01", "E02", "E05", "E06"]);
 assert.equal(result.repairSeen, true);
 assert.deepEqual(errors, []);
 writeFileSync(
-  "release/full-mission-qa.json",
+  "release/full-mission-qa-v02.json",
   JSON.stringify(
     {
       mode: "Accelerated fixed-step, real inputs, damage enabled, no profile rewards",
@@ -166,5 +168,5 @@ console.log(
   ),
 );
 await page.waitForTimeout(500);
-await page.screenshot({ path: "release/screenshots/04-result.png" });
+await page.screenshot({ path: "release/screenshots/v0.2/04-result.png" });
 await browser.close();

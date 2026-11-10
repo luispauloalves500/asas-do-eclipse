@@ -53,7 +53,11 @@ export class InputRouter {
     });
     stage.addEventListener("pointermove", (e) => {
       if (!this.pointer || this.pointer.id !== e.pointerId) return;
-      const scale = 28 / stage.clientHeight;
+      const fieldHeight = Math.min(
+        stage.clientHeight,
+        ((stage.clientWidth || stage.clientHeight) * 28) / 16,
+      );
+      const scale = 28 / fieldHeight;
       this.pointerEngaged = true;
       this.dragX += (e.clientX - this.pointer.x) * scale;
       this.dragY -= (e.clientY - this.pointer.y) * scale;

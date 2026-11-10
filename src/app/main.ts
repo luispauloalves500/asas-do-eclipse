@@ -29,6 +29,7 @@ let world: World | null = null,
   modal = "";
 const clock = new Clock();
 let qaControl: Commands | null = null;
+document.documentElement.dataset.version = "0.2.0";
 const debug = new URLSearchParams(location.search).get("debug");
 const input = new InputRouter(stage, togglePause);
 const nf = new Intl.NumberFormat("pt-BR");
@@ -42,7 +43,7 @@ function brand() {
   return '<div class="brand"><i class="emblem"><span>Λ</span></i> ESQUADRÃO AURORA</div>';
 }
 function footer() {
-  return `<div class="footer"><span>FATIA VERTICAL · M01 · v0.1.0</span><span>${store.status} · SEM SERVIÇOS EXTERNOS</span></div>`;
+  return `<div class="footer"><span>FATIA VERTICAL · M01 · v0.2.0</span><span>${store.status} · SEM SERVIÇOS EXTERNOS</span></div>`;
 }
 function base(content: string) {
   return `<div class="screen">${brand()}<div class="top-right"><span>ASTERION / SETOR 01</span><span>◈ ${fmt(save.scrap)} SUCATAS</span></div>${content}${footer()}</div>`;
@@ -108,7 +109,7 @@ function start() {
   updateHUD();
 }
 function renderGame() {
-  ui.innerHTML = `<aside class="side left"><div class="eyebrow">Operação Aurora</div><div class="number">01</div><h3>Ruínas<br>de Arkan</h3><p>Represa e distrito evacuado.<br>Nenhum sinal fica para trás.</p><div class="rule"></div><div class="label" id="segment"></div><div class="tag">NORMAL / A01 VÉSPERA</div><div class="rule"></div><div class="controls"><kbd>W A S D</kbd> Mover<br><kbd>SHIFT</kbd> Raio Lança<br><kbd>E</kbd> Bomba de Pulso<br><kbd>ESC / P</kbd> Pausar</div></aside><div class="field-ui"><div class="hud-top"><div><div class="label">Integridade</div><b id="hp">100 / 100</b><div class="hpbar" id="hpbar"><i></i></div></div><div class="score"><div class="label">Pontuação</div><b id="score">0</b><div class="hud-small"><span id="combo">x1,0</span><span id="time">00:00</span></div></div><div>${btn("pause", "Ⅱ", "icon", 'aria-label="Pausar"')}<div class="hud-small" id="rescues">0/3</div></div></div><div id="boss"></div><div id="rescue-labels"></div><div class="radio" id="radio"></div>${debug ? '<div class="debug-tag">TESTE / SEM RECOMPENSAS DE PERFIL</div>' : ""}<div class="hud-bottom">${btn("bomb", '[E] PULSO <b id="bombs">2</b><small>LIMPA PROJÉTEIS</small>')}${btn("special", '[SHIFT] RAIO <b id="specials">2</b><small>FEIXE PERFURANTE</small>')}</div></div><aside class="side right"><div class="eyebrow">Telemetria de voo</div><div class="stat"><span class="label">Civis resgatados</span><b id="side-rescue">0 / 3</b></div><div class="stat"><span class="label">Alvos destruídos</span><b id="elimination">0%</b></div><div class="stat"><span class="label">Sucata coletada</span><b id="scrap">0</b></div><div class="stat"><span class="label">Precisão</span><b id="accuracy">0%</b></div><div class="rule"></div><p>RESGATE DE SINAL<br>Mantenha-se a 1,5 un do civil por 1,5 s. Continue atirando durante o resgate.</p><div class="rule"></div><p id="save-status">${store.status}</p></aside><div id="overlays"></div>`;
+  ui.innerHTML = `<div class="field-ui"><div class="hud-top"><div><div class="label">Integridade</div><b id="hp">100 / 100</b><div class="hpbar" id="hpbar"><i></i></div></div><div class="score"><div class="label">Pontuação</div><b id="score">0</b><div class="hud-small"><span id="combo">x1,0</span><span id="time">00:00</span></div></div><div>${btn("pause", "Ⅱ", "icon", 'aria-label="Pausar"')}<div class="hud-small" id="rescues">0/3</div></div></div><div class="flight-strip"><span>M01 / ARKAN</span><span>◈ <b id="scrap">0</b></span><span>ALVOS <b id="elimination">0%</b></span></div><div id="boss"></div><div id="rescue-labels"></div><div class="radio" id="radio"></div>${debug ? '<div class="debug-tag">TESTE / SEM RECOMPENSAS DE PERFIL</div>' : ""}<div class="hud-bottom">${btn("bomb", '[E] PULSO <b id="bombs">2</b><small>LIMPA PROJÉTEIS</small>')}${btn("special", '[SHIFT] RAIO <b id="specials">2</b><small>FEIXE PERFURANTE</small>')}</div></div><div id="overlays"></div>`;
 }
 function text(id: string, value: string) {
   const e = document.getElementById(id);
@@ -353,7 +354,11 @@ function frame(now: number) {
   const delta = Math.min(0.1, (now - last) / 1000);
   last = now;
   const alpha = clock.advance(delta, paused || screen !== "game", simulate);
-  renderer.render(world, paused ? 1 : alpha, delta);
+  renderer.render(
+    world,
+    paused ? 1 : alpha,
+    paused && screen === "game" ? 0 : delta,
+  );
   hudTime += delta;
   if (hudTime > 0.1) {
     hudTime = 0;
@@ -384,6 +389,11 @@ if (debug) {
       scrap: world?.scrap,
       drawCalls: renderer.renderCalls,
       memory: { ...renderer.renderer.info.memory },
+      visual: {
+        version: "0.2.0",
+        quality: renderer.quality.level,
+        viewport: renderer.metrics,
+      },
       save,
       loops: audio.loops.size,
     }),

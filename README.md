@@ -1,19 +1,21 @@
 # ASAS DO ECLIPSE — Guerra dos Céus
 
-Primeira versão jogável **v0.1.0 / P0–P1**, baseada no GDD original incluído em `docs/GDD.md`. Não é a campanha completa: apenas M01 — Ruínas de Arkan.
+Versão visual aprimorada **v0.2.0 / P0–P1**, baseada no GDD original incluído em `docs/GDD.md`. Não é a campanha completa: apenas M01 — Ruínas de Arkan.
 
 ## Jogar agora
 
-Abra `release/asas-do-eclipse-m01.html` num navegador moderno com WebGL2. O arquivo contém todo o código, arte procedural e áudio; não requer servidor nem downloads externos. O áudio começa após uma interação. O save pertence ao navegador/origem; em `file://`, a persistência depende das políticas do navegador. Quando o armazenamento falha, a interface avisa e permite exportar o save.
+Abra `release/asas-do-eclipse-m01.html` num navegador moderno com WebGL2. A cena preenche a tela sem painéis laterais: o cenário continua além do campo lógico, escurecido por uma vinheta. Veja `CHANGELOG.md` para os detalhes da v0.2.
 
-Alternativa: descompacte `release/asas-do-eclipse-dist.zip` e sirva a pasta por HTTP. O build usa `base: './'` e foi testado sob `/jogos/asas/`. **Não foi publicado no GitHub Pages**; não há autenticação ou backend.
+O arquivo contém todo o código, arte procedural e áudio; não requer servidor nem downloads externos. O áudio começa após uma interação. O save pertence ao navegador/origem; em `file://`, a persistência depende das políticas do navegador. Quando o armazenamento falha, a interface avisa e permite exportar o save.
+
+Alternativa: descompacte `release/asas-do-eclipse-dist.zip` e sirva a pasta por HTTP. O build usa `base: './'` e foi testado sob `/jogos/asas/`. Publicado em **https://luispauloalves500.github.io/asas-do-eclipse/**. Código: https://github.com/luispauloalves500/asas-do-eclipse. Não há autenticação ou backend.
 
 ## Desenvolvimento
 
 ```bash
 npm ci
 npm run dev
-npm test                     # 21 testes Vitest
+npm test                     # 25 testes Vitest
 npm run build                # TypeScript estrito + build normal
 npm run build:single         # dist-single/index.html
 npm run release              # testes, dois builds e pacotes
@@ -57,16 +59,16 @@ O robô apenas escolhe comandos de movimento, especial e bomba. Usa `?debug=qa` 
 
 ## Estrutura
 
-`src/core` relógio; `gameplay` simulação independente de Three.js/DOM; `data` catálogos e M01; `render` apresentação; `input` roteador; `audio` sintetizador; `persistence` save; `app` telas e orquestração; `src/tests` regras; `e2e` navegador. O arquivo HTML final é empacotado a partir dos módulos, não é a fonte monolítica do jogo.
+`src/core` relógio e escala do viewport; `gameplay` simulação independente de Three.js/DOM; `data` catálogos e M01; `render` apresentação (modelos agrupados, terreno, partículas e qualidade adaptativa); `input` roteador; `audio` sintetizador; `persistence` save; `app` telas e orquestração; `src/tests` regras; `e2e` navegador. O arquivo HTML final é empacotado a partir dos módulos, não é a fonte monolítica do jogo.
 
 ## Testes de fato executados
 
-Detalhes e limitações em `qa/reports/2026-11-10-v0.1.0.md`; dados brutos em `release/browser-smoke.json` e `release/full-mission-qa.json`.
+Detalhes e limitações em `qa/reports/2026-11-10-v0.2.0.md`; dados brutos em `release/browser-smoke-v02.json` e `release/full-mission-qa-v02.json`.
 
 - TypeScript + Vite: PASS.
-- Vitest: 21/21 PASS.
-- Chromium headless: 12 verificações PASS; nenhum erro de console ou `pageerror`.
-- 20 reinícios pela interface: uma fonte contínua de motor; contagem de geometrias estável em 28.
+- Vitest: 25/25 PASS.
+- Chromium headless: 13 verificações PASS; nenhum erro de console ou `pageerror`.
+- 20 reinícios pela interface: uma fonte contínua de motor; contagem de geometrias estável em 62.
 - Partida M01 acelerada, apenas com comandos: vitória em **5:56,72 de simulação**, 3/3 civis, os dois canhões destruídos e as fases 1/2/3 observadas. HP/dano normal, sem god-mode.
 - Mouse real, teclado, gamepad sintético padrão, toque CDP em 390×844, subpasta HTTP e HTML via `file://`.
 
@@ -76,4 +78,4 @@ Detalhes e limitações em `qa/reports/2026-11-10-v0.1.0.md`; dados brutos em `r
 - Arte, música e efeitos são placeholders originais, não assets de produção final. Menus usam a mesma câmera ortográfica, não uma cena perspectiva dedicada.
 - Sem remapeamento de teclas, dificuldade Acessível/checkpoint, navegação integral de menus pelo controle ou perfis gráficos/acessibilidade completos.
 - O boss pode cair rapidamente com bom alinhamento e Raio Lança; o playthrough seguro também demonstrou que é possível evitar combates laterais. **Próximo risco prioritário conforme §23: playtests humanos e balanceamento/legibilidade de M01 antes de M02**, especialmente duração da luta, interesse dos primeiros 40 s, metas de 70/95% e coleta.
-- Teste touch foi em emulação Chromium, não aparelho Android físico. Gamepad foi mapeamento sintético, não controle físico. Não há certificação Firefox/Safari, FPS p95 em hardware-alvo, RAM/VRAM de 10 partidas completas nem teste humano em tempo real de 6 minutos. Draw calls observadas no snapshot de boss: 60 (não um teto certificado de toda a missão).
+- Teste touch foi em emulação Chromium, não aparelho Android físico. Gamepad foi mapeamento sintético, não controle físico. Não há certificação Firefox/Safari, FPS p95 em hardware-alvo, RAM/VRAM de 10 partidas completas nem teste humano em tempo real de 6 minutos. Draw calls observadas no snapshot de boss: cerca de 100 (não um teto certificado de toda a missão).
