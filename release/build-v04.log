@@ -1,0 +1,48 @@
+
+> asas-do-eclipse@0.4.0 release
+> npm test && npm run build && npm run build:single && node tools/package.mjs
+
+
+> asas-do-eclipse@0.4.0 test
+> vitest run
+
+
+ RUN  v5.1.0 /workspace/asas-do-eclipse
+
+
+ Test Files  3 passed (3)
+      Tests  59 passed (59)
+   Start at  17:59:51
+   Duration  219ms (tests 47%, import 29%, transform 20%, worker 3%)
+
+
+> asas-do-eclipse@0.4.0 build
+> tsc --noEmit && vite build
+
+vite v8.3.7 building client environment for production...
+transforming...
+✓ 41 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.60 kB │ gzip:   0.36 kB
+dist/assets/index-BDczVsWf.css   25.56 kB │ gzip:   6.43 kB
+dist/assets/index-CWK2JM42.js   704.57 kB │ gzip: 188.02 kB
+
+✓ built in 274ms
+
+> asas-do-eclipse@0.4.0 build:single
+> vite build --mode single
+
+vite v8.3.7 building client environment for single...
+transforming...
+✓ 41 modules transformed.
+rendering chunks...
+[plugin vite:singlefile] 
+
+[plugin vite:singlefile] Inlining: index-BMflXVXD.js
+[plugin vite:singlefile] Inlining: style-BDczVsWf.css
+computing gzip size...
+dist-single/index.html  730.69 kB │ gzip: 194.68 kB
+
+✓ built in 255ms
+release/asas-do-eclipse-m01.html + release/asas-do-eclipse-dist.zip

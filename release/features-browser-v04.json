@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "Fresh profile: M03 locked; M04/M05 remain future content",
+    "Legacy v0.3 campaign/medals/scrap migrate and unlock M03 through map/briefing/normal gameplay without debug",
+    "Five-system hangar: fixture-funded cadence/armor upgrades persist and HP changes to 110; two audio buses/one engine",
+    "Pause options freeze simulation, persist all six settings; real Space manual fire, Q posture and emulated LB edge switch work without immunity",
+    "M03-clear fixture unlocks equipable Bóreas original model; armor retained (90HP), motor speed >9.9; equipment persists",
+    "M03 portrait 390×844: native mobile posture button, actual CDP relative touch movement, fullscreen canvas, accessible scrolling pause options; no side panels"
+  ],
+  "errors": [],
+  "browser": "158.0.8127.18"
+}

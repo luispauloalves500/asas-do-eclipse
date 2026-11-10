@@ -1,0 +1,207 @@
+{
+  "mode": "Accelerated fixed-step, real inputs, damage enabled, no profile rewards",
+  "errors": [],
+  "steps": 7790,
+  "patterns": [
+    "minas",
+    "jato elétrico ativo",
+    "corrida ativa"
+  ],
+  "minHP": 100,
+  "phases": [
+    1,
+    2,
+    3
+  ],
+  "enemies": [
+    "E01",
+    "E03",
+    "E05",
+    "E07",
+    "E08"
+  ],
+  "repairSeen": true,
+  "state": {
+    "screen": "game",
+    "selectedStage": "M02",
+    "stageId": "M02",
+    "ammoDestroyed": 2,
+    "convoys": [],
+    "paused": true,
+    "state": "victory",
+    "time": 387.8666666666426,
+    "player": {
+      "id": 0,
+      "x": -3.269001080725377,
+      "y": -7.999900867184576,
+      "px": -3.269001080725377,
+      "py": -7.999900867184576,
+      "vx": 0,
+      "vy": 0,
+      "r": 0.33,
+      "hp": 100,
+      "maxHp": 100,
+      "invul": 995.4833333333365,
+      "fire": -0.05,
+      "bombs": 2,
+      "specials": 0,
+      "beam": 0,
+      "posture": "rasante",
+      "targetPosture": "rasante",
+      "transition": 0,
+      "postureCooldown": 0,
+      "altitude": 0,
+      "dodgeBoost": 0,
+      "dodgeCooldown": 0
+    },
+    "boss": {
+      "x": 0,
+      "y": 6.2,
+      "py": 6.2,
+      "hp": 0,
+      "left": 0,
+      "right": 0,
+      "phase": 3,
+      "invul": 0,
+      "age": 42.88333333333218,
+      "cycle": 3.433333333333338,
+      "dead": true,
+      "deathTime": 3.516666666666659,
+      "cars": [
+        {
+          "id": -20,
+          "x": -4.141770789838752,
+          "y": 2.287960218022743,
+          "px": -4.142839732893748,
+          "py": 2.4645588864098626,
+          "r": 1,
+          "hp": 0,
+          "maxHp": 900,
+          "dash": 0.36666666666666803
+        },
+        {
+          "id": -21,
+          "x": -1.7417707898387516,
+          "y": 6.484868887535758,
+          "px": -1.7428397328937475,
+          "py": 6.487554769871833,
+          "r": 0.86,
+          "hp": 0,
+          "maxHp": 200,
+          "dash": -10
+        },
+        {
+          "id": -22,
+          "x": 0.6582292101612484,
+          "y": 6.548879024844129,
+          "px": 0.6571602671062523,
+          "py": 6.548474828244947,
+          "r": 0.86,
+          "hp": 0,
+          "maxHp": 200,
+          "dash": -10
+        },
+        {
+          "id": -23,
+          "x": 3.058229210161248,
+          "y": 6.448805905383169,
+          "px": 3.057160267106252,
+          "py": 6.44550172982507,
+          "r": 0.86,
+          "hp": 0,
+          "maxHp": 200,
+          "dash": -10
+        }
+      ],
+      "attackIndex": 7,
+      "flash": 0.08
+    },
+    "enemies": [],
+    "rescues": [
+      {
+        "id": 55,
+        "x": -5.4,
+        "y": 6.975999999999962,
+        "px": -5.4,
+        "py": 6.987999999999961,
+        "progress": 1,
+        "active": false,
+        "age": 4.19999999999999,
+        "rescued": true
+      },
+      {
+        "id": 61,
+        "x": 5.4,
+        "y": 7.047999999999959,
+        "px": 5.4,
+        "py": 7.059999999999959,
+        "progress": 1,
+        "active": false,
+        "age": 4.099999999999991,
+        "rescued": true
+      },
+      {
+        "id": 65,
+        "x": 0,
+        "y": 7.047999999999959,
+        "px": 0,
+        "py": 7.059999999999959,
+        "progress": 1,
+        "active": false,
+        "age": 4.099999999999991,
+        "rescued": true
+      }
+    ],
+    "bullets": [],
+    "pickups": [],
+    "lasers": [],
+    "score": 15200,
+    "scrap": 170,
+    "drawCalls": 115,
+    "memory": {
+      "geometries": 113,
+      "textures": 1
+    },
+    "visual": {
+      "version": "0.4.0",
+      "quality": 0.8,
+      "viewport": {
+        "scale": 32.142857142857146,
+        "fieldWidth": 514.2857142857143,
+        "fieldHeight": 900.0000000000001,
+        "worldWidth": 49.77777777777777,
+        "worldHeight": 27.999999999999996
+      }
+    },
+    "save": {
+      "schemaVersion": 2,
+      "scrap": 0,
+      "upgrades": {
+        "motor": 0,
+        "canhao": 0,
+        "ima": 0
+      },
+      "cleared": false,
+      "bestScore": 0,
+      "medals": [],
+      "settings": {
+        "sound": true
+      },
+      "attempts": 0
+    },
+    "loops": 0,
+    "music": {
+      "stage": "M02",
+      "mode": "menu",
+      "buses": 2
+    },
+    "options": {
+      "music": 0.65,
+      "effects": 0.8,
+      "autoFire": true,
+      "showHitbox": true,
+      "vibration": false,
+      "quality": "auto"
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "version": "0.4.0",
+  "verified_at_local": "2026-11-10T17:59:53 America/Sao_Paulo",
+  "unit_tests": 59,
+  "playthroughs": {
+    "M01": {
+      "state": "victory",
+      "seconds": 356.1666666666714,
+      "hp": 100,
+      "rescued": 3,
+      "phases": [
+        1,
+        2,
+        3
+      ],
+      "errors": []
+    },
+    "M02": {
+      "state": "victory",
+      "seconds": 387.8666666666426,
+      "hp": 100,
+      "rescued": 3,
+      "phases": [
+        1,
+        2,
+        3
+      ],
+      "errors": []
+    },
+    "M03": {
+      "state": "victory",
+      "seconds": 390.34999999997365,
+      "hp": 100,
+      "rescued": 2,
+      "phases": [
+        1,
+        2,
+        3
+      ],
+      "errors": []
+    }
+  },
+  "artifacts": {
+    "release/asas-do-eclipse-m01.html": {
+      "bytes": 730693,
+      "sha256": "a30497d7e8dd51b10c23273086a7d550ced5a21115428ed16217b212bd6df139"
+    },
+    "release/asas-do-eclipse-dist.zip": {
+      "bytes": 194474,
+      "sha256": "74c28f478e694a3d0ebfb6e59010e4192af320427fe34081db6f9d6f3259af50"
+    }
+  }
+}
