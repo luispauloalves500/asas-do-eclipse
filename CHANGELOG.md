@@ -1,5 +1,17 @@
 # Histórico
 
+## v0.5.0 — 16/11/2026
+
+- **M04 Costa das Cinzas** (GDD 8.3/8.2/7.1): mar cinzento com shader animado, espuma de costa e quebra-mar, cristas no mar aberto, docas com guindastes, contêineres e armazéns, falésias, pilhas de rocha, farol com facho giratório, navios encalhados inclinados e cinzas no ar. Timeline JSON: baterias E05/E06 (0–2:00) → Hidras E11 + drones E01 (2:00–4:30) → docas com três resgates sob fogo, salvas E07 e aproximação de câmera (4:30–6:30) → chefe.
+- **E11 Hidra**: lancha torpedeira 3D (casco, faixa vermelha, lançador de 7 tubos, ponte, chaminé, radar giratório, esteira de espuma). Anuncia por 1,05 s uma **pista segura** ciano; dispara 7 torpedos SOLO que se abrem em 9 faixas e deixam um corredor de 3,8 un. Alta passa por cima; Rasante dá +20%.
+- **Resgates sob fogo**: enquanto um resgate de doca está aberto, a artilharia costeira marca um círculo de 1 un sobre a nave, com 1,25 s até o impacto (20 de dano); sair e voltar só decai o progresso aos poucos.
+- **Câmera de aproximação**: entre ~4:22 e ~6:28 o cenário costeiro aproxima até 6%. A câmera de jogo e o campo 16×28 não mudam, então nenhum projétil é escondido.
+- **Bastião Delta**: fortaleza costeira 3D com três casamatas (260 HP, estados intacto/destroço) e comando de 1100 HP protegido pela casamata central. Fase 1: torres AA com mira anunciada; fase 2: barragens costeiras SOLO em leque; fase 3: raio da plataforma com aviso de 1,25 s em toda a área perigosa e brecha de 2,6 un. Destruir uma casamata apaga seus projéteis/avisos e desliga seus ataques. Entrada com ALERTA, blindagem de 1,5 s, transições de 0,9 s e destruição segura de 3,5 s. Recompensa narrativa: Farol identificado (Suri/Lina/NÓX).
+- Campanha: M04 abre após vitória Normal em M03; mapa, briefing com modelo 3D do chefe, relatório (casamatas 3/3, Hidras afundadas, bônus "Proteger o porto" +60) e "Próxima missão" a partir de M03. Save schema 2 aditivo, com migração do registro M04 e `lastStage` validado.
+- Pressão leve de objetivo em todas as missões: inimigo que escapa vivo conta em **FUGAS** no HUD e reduz o combo em 0,5. Não há falha por fuga.
+- Flash de impacto mais suave em cascos grandes, para que o tiro automático não deixe Hidra/Bastião brancos. Avisos de raio largos aparecem na largura real, abaixo da nave.
+- QA: `__AURORA__.hold()`, só em modo debug, congela o tempo real entre passos e torna capturas e playthroughs reprodutíveis. 74 testes (15 novos de M04); quatro vitórias aceleradas M01–M04; Chromium desktop/móvel sem erros. Evidências em `release/*v05.json`, `release/screenshots/v0.5/` e `qa/reports/2026-11-16-v0.5.0.md`.
+
 ## v0.4.0 — 10/11/2026
 
 - Revisão autocrítica prévia documentada; menu com céu animado e porto aéreo 3D, hangar com aeronave giratória, cinco melhorias com comparação antes/depois, briefing contextual com reconhecimento 3D do chefe.

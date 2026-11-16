@@ -2,6 +2,13 @@ import { aircraft, selectedAircraft, type AircraftId } from "../data/aircraft";
 import { preferences, type Preferences } from "../persistence/Preferences";
 import { advancePosture, postureDamage, hazardHits } from "./Posture";
 import { createCyclone, updateCyclone, hitCyclone } from "./CycloneController";
+import {
+  createBastion,
+  updateBastion,
+  hitBastion,
+  casemates,
+  coreOffset,
+} from "./BastionController";
 import { stages, type StageId, type Stage } from "../data/stages";
 import {
   createSerpent,
@@ -9,7 +16,7 @@ import {
   hitSerpent,
   type BossCar,
 } from "./SerpentController";
-import { enemies, type EnemyKind } from "../data/enemies";
+import { enemies, isGround, type EnemyKind } from "../data/enemies";
 import { BulletPool } from "./EntityPool";
 import {
   SpatialHash,
@@ -82,6 +89,10 @@ export interface Laser {
   owner: number;
   active: boolean;
   lock: number;
+  /** Circle = telegraphed artillery splash (radius = width / 2). */
+  shape?: "line" | "circle";
+  /** Guidance overlay (e.g. Hidra safe lane): drawn for its whole life, never deals damage. */
+  visualOnly?: boolean;
 }
 export interface Convoy extends Circle {
   px: number;
@@ -91,7 +102,11 @@ export interface Convoy extends Circle {
   age: number;
 }
 export interface Boss {
-  kind?: "ciclone";
+  kind?: "ciclone" | "bastiao";
+  casemates?: number[];
+  gapX?: number;
+  aimX?: number;
+  aimY?: number;
   wind?: number;
   spiralShots?: number;
   spiralClock?: number;
@@ -112,7 +127,16 @@ export interface Boss {
   attackIndex?: number;
 }
 export interface Target extends Circle {
-  type: "enemy" | "core" | "left" | "right" | "car" | "convoy" | "wing";
+  type:
+    | "enemy"
+    | "core"
+    | "left"
+    | "right"
+    | "car"
+    | "convoy"
+    | "wing"
+    | "casemate";
+  part?: number;
   carIndex?: number;
   wingIndex?: 0 | 1;
   convoy?: Convoy;
@@ -129,6 +153,12 @@ export class World {
   convoys: Convoy[] = [];
   ammoDestroyed = 0;
   ammoEscaped = 0;
+  /** Enemies that left the field alive: light pressure (combo step loss), never a fail state. */
+  escaped = 0;
+  hidraSpawned = 0;
+  hidraSunk = 0;
+  shellClock = 1.5;
+  shellsFired = 0;
   positionHistory: { time: number; x: number; y: number }[] = [];
   time = 0;
   scroll = 0;
@@ -212,9 +242,11 @@ export class World {
     this.say(
       stageId === "M01"
         ? "Lina: Arkan ainda tem gente no solo. Não vamos abandonar ninguém."
-        : stageId === "M03"
-          ? "Lina: Fortaleza do Vento. Aprenda a alternar altitude e traga os dois técnicos para casa."
-          : "Suri: a ferrovia corta o cânion. Precisamos dos técnicos e dos dados desse comboio.",
+        : stageId === "M04"
+          ? "Lina: Costa das Cinzas. O porto ainda tem estivadores presos nas docas. Cuidado com as baterias das falésias."
+          : stageId === "M03"
+            ? "Lina: Fortaleza do Vento. Aprenda a alternar altitude e traga os dois técnicos para casa."
+            : "Suri: a ferrovia corta o cânion. Precisamos dos técnicos e dos dados desse comboio.",
       8,
     );
   }
@@ -258,6 +290,7 @@ export class World {
       wings: kind === "E10" ? [45, 45] : undefined,
     });
     this.spawned++;
+    if (kind === "E11") this.hidraSpawned++;
   }
   spawnPickup(kind: "scrap" | "repair", x: number, y: number, value = 10) {
     this.pickups.push({
@@ -276,6 +309,16 @@ export class World {
     this.enemies = [];
     this.convoys = [];
     this.pool.clear(true);
+    if (this.stageId === "M04") {
+      this.lasers = [];
+      this.boss = createBastion();
+      this.say(
+        "ALERTA • BASTIÃO DELTA — cada casamata é uma arma. Derrube-as para abrir o comando.",
+        5,
+      );
+      this.events.push("laser");
+      return;
+    }
     if (this.stageId === "M03") {
       this.lasers = [];
       this.boss = createCyclone();
@@ -365,6 +408,52 @@ export class World {
     this.updateLasers(dt);
     this.updatePickups(dt);
     this.updateRescues(dt);
+    this.updateShelling(dt);
+  }
+  /** M04 "resgates sob fogo": while a dock rescue is open, coastal artillery telegraphs a 1,0-radius splash on the ship's position for 1,1 s. */
+  updateShelling(dt: number) {
+    if (this.stageId !== "M04" || this.boss) return;
+    if (!this.rescues.some((r) => r.active)) {
+      this.shellClock = Math.max(this.shellClock, 1.2);
+      return;
+    }
+    this.shellClock -= dt;
+    if (this.shellClock > 0) return;
+    this.shellClock = 3.4;
+    this.shellsFired++;
+    const x = Math.max(-6.6, Math.min(6.6, this.player.x)),
+      y = this.player.y;
+    this.lasers.push({
+      id: this.id++,
+      x,
+      y,
+      tx: x,
+      ty: y,
+      width: 2,
+      age: 0,
+      warn: 1.1,
+      duration: 0.12,
+      source: "Artilharia costeira • obus",
+      owner: -50,
+      active: true,
+      lock: 0,
+      shape: "circle",
+    });
+    this.events.push("laser");
+  }
+  /** 0..1 cinematic approach over the docks; renderer applies ≤8% to scenery only. */
+  get approach() {
+    if (this.stageId !== "M04" || this.boss) return 0;
+    const t = this.time;
+    return t < 262
+      ? 0
+      : t < 278
+        ? (t - 262) / 16
+        : t < 372
+          ? 1
+          : t < 388
+            ? (388 - t) / 16
+            : 0;
   }
   animate(dt: number) {
     for (const f of this.fx) f.age += dt;
@@ -444,6 +533,36 @@ export class World {
     }
     if (!this.boss && this.time >= this.mission.bossEntryAtSeconds)
       this.startBoss();
+    if (this.stageId === "M04") {
+      const at = (t: number) => this.time > t && this.time < t + 0.04;
+      if (at(12))
+        this.say(
+          "Baterias nas falésias. Tiro normal destrói as torres de terra — em Rasante, +20%.",
+          6,
+        );
+      if (at(116))
+        this.say(
+          "Suri: navios Hidra no canal! Os torpedos de superfície deixam uma pista segura marcada em ciano.",
+          7,
+        );
+      if (at(150))
+        this.say(
+          "Dica: em Alta os torpedos passam por baixo, mas você perde o bônus contra navios.",
+          6,
+        );
+      if (at(264))
+        this.say(
+          "Lina: docas à frente. Os estivadores estão sob fogo — saia do círculo do obus e volte.",
+          7,
+        );
+      if (at(372))
+        this.say(
+          "Suri: esse pulso… vem do farol da costa. Um sinal Farol está acordando!",
+          6,
+        );
+      if (at(384)) this.say("NÓX: PERÍMETRO DELTA. ACESSO AO FAROL NEGADO.", 4);
+      return;
+    }
     if (this.stageId === "M03") {
       if (this.time > 6 && this.time < 6.04)
         this.say(
@@ -524,7 +643,10 @@ export class World {
         if (e.active && Math.hypot(e.x - p.x, e.y - p.y) < 14)
           this.hitEnemy(e, 100);
       if (this.boss && Math.hypot(this.boss.x - p.x, this.boss.y - p.y) < 24) {
-        if (this.boss.cars) {
+        if (this.boss.casemates) {
+          for (let i = 0; i < 3; i++) hitBastion(this, i, 80);
+          hitBastion(this, "core", 80);
+        } else if (this.boss.cars) {
           for (let i = 0; i < 4; i++) this.hitCar(i, 80);
         } else {
           this.hitBoss("left", 80);
@@ -552,6 +674,7 @@ export class World {
         e.y -= d.speed * dt;
       if (e.kind === "E02") e.x = e.originX + Math.sin(e.age * 1.7) * 1.3;
       if (e.kind === "E03") e.x = e.originX + Math.sin(e.age * 0.9) * 1.1;
+      if (e.kind === "E11") e.x = e.originX + Math.sin(e.age * 0.45) * 0.6;
       e.timer -= dt;
       if (e.y > 12) {
         e.state = "FORMATION";
@@ -581,6 +704,40 @@ export class World {
                 "Lâmina • aviso de investida",
                 e.id,
               );
+              this.events.push("laser");
+            }
+            if (e.kind === "E11") {
+              const safe = 1 + Math.floor(this.random() * 6);
+              e.aimX = laneCenter(safe) + 0.8;
+              e.aimY = safe;
+              this.lasers.push({
+                id: this.id++,
+                x: e.aimX,
+                y: e.y - 1,
+                tx: e.aimX,
+                ty: -16,
+                width: 3.2,
+                age: 0,
+                warn: d.warning,
+                duration: 4.2,
+                source: "Hidra • pista segura",
+                owner: 0,
+                active: true,
+                lock: 0,
+                visualOnly: true,
+              });
+              for (const lane of torpedoLanes(safe))
+                this.addLaser(
+                  lane,
+                  e.y - 1,
+                  lane,
+                  -16,
+                  0.03,
+                  d.warning,
+                  0,
+                  "Hidra • aviso de torpedo",
+                  e.id,
+                );
               this.events.push("laser");
             }
             if (e.kind === "E03") {
@@ -628,6 +785,8 @@ export class World {
       if (e.y < -17) {
         e.active = false;
         e.state = "RETREAT";
+        this.escaped++;
+        this.combo = Math.max(1, this.combo - 0.5);
       } else if (overlaps(e, this.player))
         this.hurt(20, d.name + " (contato)", e.id);
     }
@@ -641,6 +800,27 @@ export class World {
         len = Math.hypot(dx, dy) || 1;
       e.dashVX = (dx / len) * 12;
       e.dashVY = (dy / len) * 12;
+      return;
+    }
+    if (e.kind === "E11") {
+      for (const lane of torpedoLanes(e.aimY)) {
+        const q = this.pool.spawn(
+          e.x,
+          e.y - 1,
+          0,
+          -4.2,
+          false,
+          d.damage,
+          "Hidra • torpedo de superfície",
+        );
+        q.style = "torpedo";
+        q.r = 0.5;
+        q.life = 10;
+        q.laneX = lane;
+        q.hazard = "ground_only";
+        q.owner = e.id;
+      }
+      this.events.push("missile");
       return;
     }
     if (e.kind === "E10") {
@@ -759,6 +939,10 @@ export class World {
     });
   }
   updateBoss(dt: number) {
+    if (this.boss?.kind === "bastiao") {
+      updateBastion(this, dt);
+      return;
+    }
     if (this.boss?.kind === "ciclone") {
       updateCyclone(this, dt);
       return;
@@ -866,14 +1050,25 @@ export class World {
       if (l.owner === -2 && (this.boss?.left || 0) <= 0) l.active = false;
       if (l.owner === -3 && (this.boss?.right || 0) <= 0) l.active = false;
       if (
+        l.owner <= -41 &&
+        l.owner >= -43 &&
+        (this.boss?.casemates?.[-41 - l.owner] || 0) <= 0
+      )
+        l.active = false;
+      if (
         l.duration > 0 &&
+        !l.visualOnly &&
         l.age >= l.warn + 0.15 &&
         l.age <= l.warn + 0.15 + l.duration &&
         l.active &&
         segmentDistance(this.player.x, this.player.y, l.x, l.y, l.tx, l.ty) <
           this.player.r + l.width / 2
       )
-        this.hurt(l.owner > 0 ? 32 : 38, l.source, l.owner);
+        this.hurt(
+          l.owner > 0 ? 32 : l.shape === "circle" ? 20 : 38,
+          l.source,
+          l.owner,
+        );
       if (l.age > l.warn + 0.15 + l.duration) l.active = false;
     }
     this.lasers = this.lasers.filter((l) => l.active);
@@ -935,6 +1130,27 @@ export class World {
       }
       return;
     }
+    if (b?.casemates && !b.dead) {
+      b.casemates.forEach((hp, i) => {
+        if (hp > 0)
+          this.targets.insert({
+            id: -60 - i,
+            x: b.x + casemates[i].x,
+            y: b.y + casemates[i].dy,
+            r: casemates[i].r,
+            type: "casemate",
+            part: i,
+          });
+      });
+      this.targets.insert({
+        id: -1,
+        x: b.x,
+        y: b.y + coreOffset,
+        r: 1.35,
+        type: "core",
+      });
+      return;
+    }
     if (b && !b.dead) {
       if (b.left > 0)
         this.targets.insert({
@@ -962,6 +1178,14 @@ export class World {
       if (!b.active) continue;
       b.px = b.x;
       b.py = b.y;
+      if (!Number.isNaN(b.laneX)) {
+        const dx = b.laneX - b.x;
+        if (Math.abs(dx) <= 7 * dt) {
+          b.x = b.laneX;
+          b.vx = 0;
+          b.laneX = NaN;
+        } else b.vx = Math.sign(dx) * 7;
+      }
       if (b.style !== "missile" || b.arm <= 0) {
         if (b.homing > 0 && b.arm <= 0) {
           const current = Math.atan2(b.vy, b.vx),
@@ -996,6 +1220,8 @@ export class World {
                 t.wingIndex!,
                 this.weaponDamage(false, b.damage),
               );
+            else if (t.type === "casemate")
+              hitBastion(this, t.part!, this.weaponDamage(true, b.damage));
             else if (t.convoy)
               this.hitConvoy(t.convoy, this.weaponDamage(true, b.damage));
             else if (t.type === "car")
@@ -1003,10 +1229,7 @@ export class World {
             else if (t.enemy)
               this.hitEnemy(
                 t.enemy,
-                this.weaponDamage(
-                  ["E05", "E06", "E07"].includes(t.enemy.kind),
-                  b.damage,
-                ),
+                this.weaponDamage(isGround(t.enemy.kind), b.damage),
               );
             else
               this.hitBoss(
@@ -1053,10 +1276,7 @@ export class World {
           e.y > this.player.y &&
           Math.abs(e.x - this.player.x) < e.r + 0.45
         )
-          this.hitEnemy(
-            e,
-            this.weaponDamage(["E05", "E06", "E07"].includes(e.kind), 150 * dt),
-          );
+          this.hitEnemy(e, this.weaponDamage(isGround(e.kind), 150 * dt));
       for (const e of this.enemies)
         if (e.active && e.wings)
           e.wings.forEach((hp, i) => {
@@ -1079,7 +1299,18 @@ export class World {
           Math.abs(c.x - this.player.x) < c.r + 0.45
         )
           this.hitConvoy(c, this.weaponDamage(true, 150 * dt));
-      if (boss?.cars && !boss.dead) {
+      if (boss?.casemates && !boss.dead) {
+        boss.casemates.forEach((hp, i) => {
+          if (
+            hp > 0 &&
+            Math.abs(boss.x + casemates[i].x - this.player.x) <
+              casemates[i].r + 0.45
+          )
+            hitBastion(this, i, this.weaponDamage(true, 150 * dt));
+        });
+        if (Math.abs(boss.x - this.player.x) < 1.8)
+          hitBastion(this, "core", this.weaponDamage(true, 150 * dt));
+      } else if (boss?.cars && !boss.dead) {
         boss.cars.forEach((c, i) => {
           if (
             c.hp > 0 &&
@@ -1110,6 +1341,7 @@ export class World {
     if (e.hp <= 0) {
       e.active = false;
       e.state = "DEATH";
+      if (e.kind === "E11") this.hidraSunk++;
       this.kills++;
       this.productive(enemies[e.kind].score);
       this.effect(e.x, e.y, e.kind === "E05" ? 1.5 : 1);
@@ -1141,6 +1373,14 @@ export class World {
   }
   hitBoss(part: "left" | "right" | "core", damage: number) {
     const b = this.boss;
+    if (b?.kind === "bastiao") {
+      hitBastion(
+        this,
+        part === "core" ? "core" : part === "left" ? 0 : 2,
+        damage,
+      );
+      return;
+    }
     if (b?.kind === "ciclone") {
       hitCyclone(this, part, damage);
       return;
@@ -1334,6 +1574,14 @@ export class World {
     return this.shots ? Math.min(1, this.hits / this.shots) : 0;
   }
   get segment() {
+    if (this.stageId === "M04")
+      return this.boss
+        ? "CONFRONTO • BASTIÃO DELTA"
+        : this.time < 120
+          ? "FALÉSIAS • BATERIAS"
+          : this.time < 270
+            ? "CANAL • HIDRAS E DRONES"
+            : "DOCAS • RESGATES SOB FOGO";
     if (this.stageId === "M03")
       return this.boss
         ? "CONFRONTO • CICLONE"
@@ -1360,4 +1608,13 @@ export class World {
             ? "OPERAÇÃO • RESGATE DE SINAL"
             : "DEFESA • TORRES ANTIAÉREAS";
   }
+}
+
+/** Nine surface lanes, 1,6 apart. Lanes `safe` and `safe + 1` are left open: a 3,8-wide corridor. */
+export const laneCenter = (k: number) => -6.4 + 1.6 * k;
+export function torpedoLanes(safe: number) {
+  const lanes: number[] = [];
+  for (let k = 0; k < 9; k++)
+    if (k !== safe && k !== safe + 1) lanes.push(laneCenter(k));
+  return lanes;
 }

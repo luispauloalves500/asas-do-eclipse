@@ -27,7 +27,8 @@ export function available(s: Save, id: string) {
   return (
     id === "M01" ||
     (id === "M02" && record(s, "M01").cleared) ||
-    (id === "M03" && record(s, "M02").cleared)
+    (id === "M03" && record(s, "M02").cleared) ||
+    (id === "M04" && record(s, "M03").cleared)
   );
 }
 export function rememberStage(s: Save, id: StageId) {

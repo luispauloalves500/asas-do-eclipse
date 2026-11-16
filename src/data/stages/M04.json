@@ -1,0 +1,145 @@
+{
+  "id": "M04",
+  "title": "Costa das Cinzas",
+  "biome": "ash_coast_harbor",
+  "scrollSpeed": 2.2,
+  "durationTargetSeconds": 480,
+  "bossEntryAtSeconds": 390,
+  "waves": [
+    {
+      "atSeconds": 14,
+      "enemy": "E05",
+      "pattern": "COAST_BATTERY",
+      "count": 2
+    },
+    {
+      "atSeconds": 30,
+      "enemy": "E06",
+      "pattern": "CLIFF_AA",
+      "count": 2
+    },
+    {
+      "atSeconds": 47,
+      "enemy": "E05",
+      "pattern": "COAST_BATTERY",
+      "count": 2
+    },
+    {
+      "atSeconds": 64,
+      "enemy": "E06",
+      "pattern": "CLIFF_AA",
+      "count": 2
+    },
+    {
+      "atSeconds": 82,
+      "enemy": "E05",
+      "pattern": "COAST_BATTERY",
+      "count": 3
+    },
+    {
+      "atSeconds": 100,
+      "enemy": "E06",
+      "pattern": "CLIFF_AA",
+      "count": 2
+    },
+    {
+      "atSeconds": 124,
+      "enemy": "E11",
+      "pattern": "HARBOR_TORPEDO",
+      "count": 1
+    },
+    {
+      "atSeconds": 140,
+      "enemy": "E01",
+      "pattern": "DRONE_SCREEN",
+      "count": 4
+    },
+    {
+      "atSeconds": 158,
+      "enemy": "E11",
+      "pattern": "HARBOR_TORPEDO",
+      "count": 2
+    },
+    {
+      "atSeconds": 178,
+      "enemy": "E01",
+      "pattern": "DRONE_SCREEN",
+      "count": 5
+    },
+    {
+      "atSeconds": 196,
+      "enemy": "E11",
+      "pattern": "HARBOR_TORPEDO",
+      "count": 1
+    },
+    {
+      "atSeconds": 214,
+      "enemy": "E01",
+      "pattern": "DRONE_SCREEN",
+      "count": 4
+    },
+    {
+      "atSeconds": 232,
+      "enemy": "E11",
+      "pattern": "HARBOR_TORPEDO",
+      "count": 2
+    },
+    {
+      "atSeconds": 252,
+      "enemy": "E01",
+      "pattern": "DRONE_SCREEN",
+      "count": 4
+    },
+    {
+      "atSeconds": 282,
+      "enemy": "E07",
+      "pattern": "DOCK_SALVO",
+      "count": 1
+    },
+    {
+      "atSeconds": 298,
+      "enemy": "E01",
+      "pattern": "DRONE_SCREEN",
+      "count": 4
+    },
+    {
+      "atSeconds": 318,
+      "enemy": "E07",
+      "pattern": "DOCK_SALVO",
+      "count": 2
+    },
+    {
+      "atSeconds": 334,
+      "enemy": "E06",
+      "pattern": "CLIFF_AA",
+      "count": 2
+    },
+    {
+      "atSeconds": 352,
+      "enemy": "E07",
+      "pattern": "DOCK_SALVO",
+      "count": 1
+    },
+    {
+      "atSeconds": 366,
+      "enemy": "E01",
+      "pattern": "DRONE_SCREEN",
+      "count": 4
+    }
+  ],
+  "rescues": [
+    {
+      "atSeconds": 274,
+      "laneX": -5.4
+    },
+    {
+      "atSeconds": 306,
+      "laneX": 5.4
+    },
+    {
+      "atSeconds": 340,
+      "laneX": -5.4
+    }
+  ],
+  "repairAtSeconds": 326
+}

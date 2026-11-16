@@ -97,7 +97,9 @@ export class Atmosphere extends T.Group {
       this.set(this.decor, n, x, y, 0.25, 0.5, 0.85, 0.35);
       this.decor.setColorAt(
         n++,
-        this.color.set(stage === "M02" ? 0x836a4c : 0x43696c),
+        this.color.set(
+          stage === "M02" ? 0x836a4c : stage === "M04" ? 0x6f716d : 0x43696c,
+        ),
       );
       this.set(this.decor, n, x, y + 0.08, 0.5, 0.4, 0.34, 0.16);
       this.decor.setColorAt(n++, this.color.set(0x9eb7af));

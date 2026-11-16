@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
-mkdirSync("release/screenshots/v0.4", { recursive: true });
+mkdirSync("release/screenshots/v0.5", { recursive: true });
 const browser = await chromium.launch({
   headless: true,
   args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
@@ -36,9 +36,20 @@ try {
   );
   assert.match(
     await page.locator(".map-card").textContent(),
+    /Vença a missão anterior/,
+  );
+  await page.locator('[data-action="map-select:M05"]').click();
+  assert.equal(
+    await page.locator('[data-action="map-play:M05"]').isDisabled(),
+    true,
+  );
+  assert.match(
+    await page.locator(".map-card").textContent(),
     /próximas versões/,
   );
-  checks.push("M04–M05 displayed but not playable");
+  checks.push(
+    "Fresh profile: M04 locked behind M03; M05 displayed as future content",
+  );
   await page.evaluate(() =>
     localStorage.setItem(
       "aurora.asas.save",
@@ -61,7 +72,7 @@ try {
     await page.locator('[data-action="map-play:M02"]').isDisabled(),
     false,
   );
-  await page.screenshot({ path: "release/screenshots/v0.4/01-map.png" });
+  await page.screenshot({ path: "release/screenshots/v0.5/01-map.png" });
   await page.locator('[data-action="map-play:M02"]').click();
   assert.match(
     await page.locator(".briefing-v4").textContent(),
@@ -87,6 +98,60 @@ try {
   checks.push(
     "Campaign reload retains legacy M01 record, upgrades and last mission",
   );
+  // v0.4-format save with M01–M03 cleared: M04 opens through the normal map flow.
+  await page.evaluate(() => {
+    const rec = (s) => ({ cleared: true, bestScore: s, medals: ["clear"] });
+    localStorage.setItem(
+      "aurora.asas.save",
+      JSON.stringify({
+        schemaVersion: 2,
+        scrap: 1500,
+        upgrades: { motor: 1, canhao: 2, ima: 1 },
+        cleared: true,
+        bestScore: 30200,
+        medals: ["clear"],
+        settings: { sound: true },
+        attempts: 3,
+        aircraft: "A02",
+        campaign: {
+          lastStage: "M03",
+          stages: { M01: rec(30200), M02: rec(41000), M03: rec(52000) },
+        },
+      }),
+    );
+  });
+  await page.reload();
+  await page.getByRole("button", { name: /CAMPANHA/ }).click();
+  await page.locator('[data-action="map-select:M04"]').click();
+  assert.equal(
+    await page.locator('[data-action="map-play:M04"]').isDisabled(),
+    false,
+  );
+  assert.match(await page.locator(".map-card").textContent(), /Bastião Delta/);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: "release/screenshots/v0.5/01-map-m04.png" });
+  await page.locator('[data-action="map-play:M04"]').click();
+  assert.match(
+    await page.locator(".briefing-v4").textContent(),
+    /Costa das Cinzas/,
+  );
+  await page.waitForTimeout(400);
+  await page.screenshot({
+    path: "release/screenshots/v0.5/01b-briefing-m04.png",
+  });
+  await page.getByRole("button", { name: "INICIAR VOO ↗" }).click();
+  await page.waitForTimeout(500);
+  assert.match(await page.locator(".flight-strip").textContent(), /M04/);
+  assert.equal(
+    await page.evaluate(() => typeof window.__AURORA__),
+    "undefined",
+  );
+  checks.push(
+    "v0.4 save with M01–M03 cleared: M04 unlocked → briefing → normal play, no debug",
+  );
+  await page.keyboard.press("p");
+  await page.getByRole("button", { name: "SAIR PARA O MENU" }).click();
+  await page.getByRole("button", { name: "ENCERRAR", exact: true }).click();
   // Alternate biome restarts must not accumulate geometry or audio loops.
   await page.goto(base + "?debug=boss&stage=M02");
   await page.getByRole("button", { name: /JOGAR NOVAMENTE/ }).click();
@@ -156,7 +221,7 @@ try {
   assert.equal(await touch.locator("aside.side").count(), 0);
   assert.equal((await touch.locator("canvas").boundingBox()).height, 844);
   await touch.screenshot({
-    path: "release/screenshots/v0.4/05-m02-mobile.png",
+    path: "release/screenshots/v0.5/05-m02-mobile.png",
   });
   checks.push(
     "M02 mobile portrait 390×844: actual CDP drag, fullscreen canvas, no side panels",
@@ -172,7 +237,7 @@ try {
     true,
   );
   await touch.screenshot({
-    path: "release/screenshots/v0.4/06-mobile-map.png",
+    path: "release/screenshots/v0.5/06-mobile-map.png",
   });
   checks.push(
     "Mobile map scrolls to briefing, locked play button visible and functional",
@@ -180,7 +245,7 @@ try {
   await mobile.close();
   assert.deepEqual(errors, []);
   writeFileSync(
-    "release/campaign-browser-v04.json",
+    "release/campaign-browser-v05.json",
     JSON.stringify(
       {
         checks,

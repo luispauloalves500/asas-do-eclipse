@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
-mkdirSync("release/screenshots/v0.4", { recursive: true });
+mkdirSync("release/screenshots/v0.5", { recursive: true });
 const browser = await chromium.launch({
   headless: true,
   args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
@@ -30,7 +30,7 @@ try {
   await page.getByRole("button", { name: /CAMPANHA/ }).click();
   await page.locator('[data-action="map-select:M03"]').click();
   assert.ok(await page.locator('[data-action="map-play:M03"]').isDisabled());
-  checks.push("Fresh profile: M03 locked; M04/M05 remain future content");
+  checks.push("Fresh profile: M03 locked (M04 needs M03; M05 future content)");
   // Real v0.3-format save fixture: no new options/upgrade/aircraft fields.
   await page.evaluate(() =>
     localStorage.setItem(
@@ -65,11 +65,11 @@ try {
     await page.locator('[data-action="map-play:M03"]').isDisabled(),
     false,
   );
-  await page.screenshot({ path: "release/screenshots/v0.4/00-map.png" });
+  await page.screenshot({ path: "release/screenshots/v0.5/00-map.png" });
   await page.locator('[data-action="map-play:M03"]').click();
   assert.match(await page.locator(".briefing-v4").textContent(), /CICLONE/);
   await page.waitForTimeout(100);
-  await page.screenshot({ path: "release/screenshots/v0.4/03-briefing.png" });
+  await page.screenshot({ path: "release/screenshots/v0.5/03-briefing.png" });
   await page.getByRole("button", { name: "INICIAR VOO ↗" }).click();
   assert.equal(
     await page.evaluate(() => typeof window.__AURORA__),
@@ -80,11 +80,11 @@ try {
     "Legacy v0.3 campaign/medals/scrap migrate and unlock M03 through map/briefing/normal gameplay without debug",
   );
   await page.goto(base + "?debug=qa&stage=M03");
-  await page.screenshot({ path: "release/screenshots/v0.4/01-menu.png" });
+  await page.screenshot({ path: "release/screenshots/v0.5/01-menu.png" });
   await page.getByRole("button", { name: /HANGAR/ }).click();
   assert.equal(await page.locator(".upgrade-card").count(), 5);
   assert.ok(await page.locator('[data-action="ship:A02"]').isDisabled());
-  await page.screenshot({ path: "release/screenshots/v0.4/02-hangar.png" });
+  await page.screenshot({ path: "release/screenshots/v0.5/02-hangar.png" });
   for (const key of ["cadencia", "blindagem"]) {
     await page.locator(`[data-action="buy:${key}"]`).click();
     await page.getByRole("button", { name: "CONFIRMAR", exact: true }).click();
@@ -114,7 +114,7 @@ try {
   await page.waitForTimeout(250);
   assert.equal((await state()).time, pausedTime);
   await page.screenshot({
-    path: "release/screenshots/v0.4/09-pause-options.png",
+    path: "release/screenshots/v0.5/09-pause-options.png",
   });
   await page.getByRole("button", { name: "VOLTAR À PAUSA" }).click();
   await page.getByRole("button", { name: "CONTINUAR VOO" }).click();
@@ -187,7 +187,7 @@ try {
   assert.equal((await state()).save.aircraft, "A02");
   assert.match(await page.locator(".ship-stats").textContent(), /90 HP/);
   await page.screenshot({
-    path: "release/screenshots/v0.4/10-hangar-boreas.png",
+    path: "release/screenshots/v0.5/10-hangar-boreas.png",
   });
   await page.getByRole("button", { name: "← MENU", exact: true }).click();
   await launch(page);
@@ -238,7 +238,7 @@ try {
   );
   assert.equal((await touch.locator("canvas").boundingBox()).height, 844);
   assert.equal(await touch.locator("aside.side").count(), 0);
-  await touch.screenshot({ path: "release/screenshots/v0.4/08-mobile.png" });
+  await touch.screenshot({ path: "release/screenshots/v0.5/08-mobile.png" });
   await touch.keyboard.press("p");
   await touch.getByRole("button", { name: "OPÇÕES", exact: true }).click();
   await touch.locator('[data-option="quality"]').selectOption("media");
@@ -253,7 +253,7 @@ try {
   await mobile.close();
   assert.deepEqual(errors, []);
   writeFileSync(
-    "release/features-browser-v04.json",
+    "release/features-browser-v05.json",
     JSON.stringify({ checks, errors, browser: browser.version() }, null, 2),
   );
   console.log(JSON.stringify({ checks, errors }, null, 2));

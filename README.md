@@ -1,13 +1,13 @@
 # ASAS DO ECLIPSE — Guerra dos Céus
 
-Campanha jogável **v0.4.0 / M01 + M02 + M03**, baseada no GDD original em `docs/GDD.md`. Arte low-poly e áudio sintetizado originais. Protótipo em evolução, não a campanha completa.
+Campanha jogável **v0.5.0 / M01 + M02 + M03 + M04**, baseada no GDD original em `docs/GDD.md`. Arte low-poly e áudio sintetizado originais. Protótipo em evolução, não a campanha completa.
 
 ## Jogar
 
 **https://luispauloalves500.github.io/asas-do-eclipse/**  
 Código: https://github.com/luispauloalves500/asas-do-eclipse
 
-Abra `release/asas-do-eclipse-m01.html` diretamente em um navegador com WebGL2: o nome legado é mantido, mas **as três missões estão dentro do mesmo HTML**, sem rede/servidor. Áudio inicia após interação. Save é local por origem; em `file://` depende da política do navegador. Há aviso/exportação quando o armazenamento falha.
+Abra `release/asas-do-eclipse-m01.html` diretamente em um navegador com WebGL2: o nome legado é mantido, mas **as quatro missões estão dentro do mesmo HTML**, sem rede/servidor. Áudio inicia após interação. Save é local por origem; em `file://` depende da política do navegador. Há aviso/exportação quando o armazenamento falha.
 
 Alternativa: descompacte `release/asas-do-eclipse-dist.zip` e sirva por HTTP. Vite usa `base: './'`, inclusive em GitHub Pages/subpastas. Sem backend/autenticação. O cenário ocupa a tela inteira e continua fora dos 16×28 lógicos, com vinheta — sem painéis laterais de voo.
 
@@ -16,8 +16,9 @@ Alternativa: descompacte `release/asas-do-eclipse-dist.zip` e sirva por HTTP. Vi
 - **M01 Ruínas de Arkan:** rio, represa e ruínas; E01/E02, tanques E05, torres E06, três resgates e Gárgula-01.
 - **M02 Estrada de Ferro Fantasma:** cânion ocre, pontes de aço e trens; Raptor E03, Arpão E07 e minas E08. Três depósitos/resgates e dois vagões de munição para o bônus; Serpente de Ferro de quatro carros.
 - **M03 Fortaleza do Vento:** montanhas, névoa, turbinas gigantes e fortalezas; tutorial de altitude até 1:30, E03/Lâmina E04 até 3:30, E06/Aríete E10 e dois técnicos até 5:50, então Ciclone. Investidas telegráficas, asas destrutíveis, mísseis que só guiam por 1,2 s, vento visual e espirais com brechas.
+- **M04 Costa das Cinzas:** mar cinzento animado com espuma, quebra-mar, docas com guindastes/contêineres, falésias, farol e navios encalhados. 0:00–2:00 baterias E05/E06 (destrutíveis com tiro normal, +20% em Rasante); 2:00–4:30 navios **E11 Hidra** com muro de 7 torpedos de superfície e **pista segura** ciano de 3,8 un, mais drones E01; 4:30–6:30 três **resgates sob fogo** nas docas (obus circular anunciado por 1,25 s sobre a nave), salva E07 e aproximação de câmera só no cenário (≤6%); depois **Bastião Delta**: fortaleza com três casamatas destrutíveis (AA → barragens costeiras SOLO → raio da plataforma com brecha de 2,6 un). Destruir uma casamata remove seus ataques. Recompensa: **Farol identificado**.
 
-M01 disponível desde o início; vitória Normal na anterior libera M02/M03. M04/M05 aparecem **Em produção**. Resultados M01/M02 oferecem **Próxima missão**. Recordes e cinco medalhas por missão; saldo e upgrades compartilhados. Saves v0.1/v0.2/v0.3 migram sem reset (schema 2 aditivo).
+M01 disponível desde o início; vitória Normal na anterior libera M02/M03/M04. M05 aparece **Em produção**. Resultados M01–M03 oferecem **Próxima missão**. Inimigos que escapam vivos contam como **FUGAS** no HUD e reduzem o combo em 0,5 (pressão leve, nunca falha a missão); em M04, afundar todas as Hidras dá +60 sucatas ("Proteger o porto"). Recordes e cinco medalhas por missão; saldo e upgrades compartilhados. Saves v0.1/v0.2/v0.3 migram sem reset (schema 2 aditivo).
 
 Vencer M03 libera **A02 Bóreas**: 80 HP, velocidade 9,7, dano 0,92× e +10% de cadência por 3 s após quase-esquiva em movimento; cooldown de 4 s, sem invulnerabilidade. Modelo próprio e seleção no hangar. Véspera continua com 100 HP/8,2 un/s. Cinco upgrades globais: motor, canhão, coletor, cadência e blindagem; antes/depois, preços e confirmação no hangar.
 
@@ -25,7 +26,7 @@ Vencer M03 libera **A02 Bóreas**: 80 HP, velocidade 9,7, dano 0,92× e +10% de 
 
 - **WASD / setas / analógico esquerdo / D-pad:** mover; aceleração 35/desaceleração 40 e diagonal normalizada.
 - **Mouse/toque:** arraste relativo, incluindo gestos rápidos.
-- **Q / LB / botão ALTITUDE:** Rasante ↔ Alta; transição 0,4 s, recarga 4 s, **sem imunidade**. Usável nas três missões.
+- **Q / LB / botão ALTITUDE:** Rasante ↔ Alta; transição 0,4 s, recarga 4 s, **sem imunidade**. Usável em todas as missões.
   - Rasante: +20% contra solo, coleta base 2,0 un; maior exposição AA.
   - Alta: +15% contra ar; projéteis SOLO passam por baixo. Perigos exclusivos têm triângulo âmbar e rastro; a hitbox não muda durante a transição.
 - **Shift / botão direito / A do controle:** Raio Lança (2 cargas, 1,2 s).
@@ -44,7 +45,7 @@ Na pausa/menu: volumes música/efeitos, auto-fire, mostrar hitbox, vibração qu
 - Flash de casco, faíscas, muzzle flash, rastros, explosões/destroços/onda, hit-stop leve e tremor pequeno. Balas com contorno escuro/aro claro e render acima dos VFX. ALERTA e zona segura de 3,5 s após boss.
 - Música própria por missão/chefe, crossfade 0,75 s, SFX sintetizados. Um AudioContext, um sequenciador, dois buses de música e no máximo um loop de motor.
 - Pool de 600 projéteis, hash espacial 2D, dano/origem rastreados, HP/i-frames 0,85 s, kits, magnetismo e score/combo. Subcomponentes removem ataques, transições de boss ≤1,5 s.
-- `src/core`, `gameplay` (sem Three/DOM), `data` (três JSONs), `render`, `input`, `audio`, `persistence`, `app`; `src/tests` e `e2e`. Fontes modulares, não HTML monolítico.
+- `src/core`, `gameplay` (sem Three/DOM), `data` (quatro JSONs), `render`, `input`, `audio`, `persistence`, `app`; `src/tests` e `e2e`. Fontes modulares, não HTML monolítico.
 
 ## Desenvolver / verificar
 
@@ -53,7 +54,7 @@ Node 24 recomendado (mesma versão do CI).
 ```bash
 npm ci
 npm run dev
-npm test                    # 59 testes Vitest
+npm test                    # 74 testes Vitest
 npm run build               # tsc --noEmit + Vite normal
 npm run release             # testes + build normal + single-file + ZIP
 npx playwright install chromium
@@ -64,18 +65,19 @@ npm run preview -- --port 4176
 node e2e/autopilot.mjs       # M01 completa
 node e2e/m02.mjs             # M02 completa, 3 civis, 2 vagões e 3 fases
 node e2e/m03.mjs             # M03 completa, 2 civis, posturas e padrões/fases
-node e2e/campaign.mjs        # mapa/migração, reinícios de boss e mobile
-node e2e/v04-features.mjs    # opções, upgrades, Bóreas, Q/LB/toque
+node e2e/m04.mjs             # M04 completa, 3 resgates sob fogo, Hidras, casamatas e fases + mobile
+node e2e/campaign.mjs        # mapa/migração, M04 após M03, reinícios de boss e mobile
+node e2e/features.mjs        # opções, upgrades, Bóreas, Q/LB/toque
 ```
 
-`?debug=qa&stage=M03` permite avançar a mesma física por comandos; `?debug=boss&stage=M03` salta ao chefe (também M01/M02). **Sem god-mode/edição de HP, sem recompensas de perfil**. API de teste ausente sem `debug`. Fixtures explícitas de save são usadas somente para compras/desbloqueios em testes de UI.
+`?debug=qa&stage=M04` permite avançar a mesma física por comandos; `?debug=boss&stage=M04` salta ao chefe (também M01–M03). Com `debug`, `__AURORA__.hold(true)` congela o tempo real entre passos de QA (capturas determinísticas). **Sem god-mode/edição de HP, sem recompensas de perfil**. API de teste ausente sem `debug`. Fixtures explícitas de save são usadas somente para compras/desbloqueios em testes de UI.
 
 ## Evidências e limites
 
-Autocrítica prévia: `qa/reports/2026-11-10-v0.4-review.md`. Verificações efetivamente executadas: `qa/reports/2026-11-10-v0.4.0.md`, dados `release/*v04.json`, capturas `release/screenshots/v0.4/`. Histórico em `CHANGELOG.md`.
+Autocrítica prévia: `qa/reports/2026-11-10-v0.4-review.md`. Verificações efetivamente executadas: `qa/reports/2026-11-16-v0.5.0.md`, dados `release/*v05.json`, capturas `release/screenshots/v0.5/` (versões anteriores preservadas em `*v04*`/`v0.4/`). Histórico em `CHANGELOG.md`.
 
-59 unitários e Chromium desktop 1600×900 / mobile emulado 390×844, zero erros de console nas suítes; três vitórias aceleradas com dano normal e todos os resgates/fases. Testes incluem pausa/options, teclado/mouse/gamepad sintético/toque CDP, saves antigos, upgrades, Bóreas, reinícios e HTML offline.
+74 unitários e Chromium desktop 1600×900 / mobile emulado 390×844, zero erros de console nas suítes; quatro vitórias aceleradas com dano normal e todos os resgates/fases. Testes incluem pausa/options, teclado/mouse/gamepad sintético/toque CDP, saves antigos, upgrades, Bóreas, reinícios e HTML offline.
 
-**Fora desta versão:** M04–M15, dificuldade avançada/Acessível/checkpoints, EMP/outros especiais, outras aeronaves, coop, PWA, importação de save, remapeamento e navegação integral de menus por controle. Vento só visual no Normal; não há dificuldade avançada implementada. Modelos/áudio são arte procedural de protótipo; menus usam a câmera ortográfica inclinando os modelos, não câmera perspectiva dedicada.
+**Fora desta versão:** M05–M15, dificuldade avançada/Acessível/checkpoints, EMP/outros especiais, outras aeronaves, coop, PWA, importação de save, remapeamento e navegação integral de menus por controle. Vento só visual no Normal; não há dificuldade avançada implementada. Modelos/áudio são arte procedural de protótipo; menus usam a câmera ortográfica inclinando os modelos, não câmera perspectiva dedicada.
 
-**Próximo risco (§23):** playtests humanos e balanceamento das três missões antes de adicionar mais. Piloto seguro ainda contorna boa parte dos inimigos; bosses caem rápido com alinhamento/raio, tutorial M03 pode ser longo e metas de eliminação/coleta precisam validação. Vitórias aceleradas ficaram em cerca de 5:56 / 6:28 / 6:30 de simulação (não certificam duração humana de 7–8 min). Sem teste em Android/controle físico, Safari/Firefox, audição humana da mixagem, perfil FPS p95 no hardware-alvo ou RAM/VRAM ao longo de dez partidas completas.
+**Próximo risco (§23):** playtests humanos e balanceamento das quatro missões antes de adicionar mais. Piloto seguro ainda contorna boa parte dos inimigos; bosses caem rápido com alinhamento/raio, tutorial M03 pode ser longo e metas de eliminação/coleta precisam validação. Vitórias aceleradas ficaram em cerca de 5:56 / 6:28 / 6:33 / 7:28 de simulação (não certificam duração humana de 7–8 min). Sem teste em Android/controle físico, Safari/Firefox, audição humana da mixagem, perfil FPS p95 no hardware-alvo ou RAM/VRAM ao longo de dez partidas completas.

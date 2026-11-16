@@ -107,7 +107,8 @@ describe("M03 e campanha", () => {
     expect(shipAvailable(s, "A02")).toBe(false);
     completeAttempt(s, "M03", true, 3, ["clear"]);
     expect(shipAvailable(s, "A02")).toBe(true);
-    expect(available(s, "M04")).toBe(false);
+    expect(available(s, "M04")).toBe(true);
+    expect(available(s, "M05")).toBe(false);
     expect(record(s, "M02").bestScore).toBe(2);
   });
   it("Bóreas tem HP80, velocidade9,7 e dano0,92x; seleção validada", () => {

@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
-mkdirSync("release/screenshots/v0.4", { recursive: true });
+mkdirSync("release/screenshots/v0.5", { recursive: true });
 const browser = await chromium.launch({
   headless: true,
   args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
@@ -14,7 +14,7 @@ p.on("console", (m) => {
 const root = "http://localhost:4176/";
 const shot = async (n) => {
   await p.waitForTimeout(350);
-  await p.screenshot({ path: "release/screenshots/v0.4/" + n + ".png" });
+  await p.screenshot({ path: "release/screenshots/v0.5/" + n + ".png" });
 };
 await p.goto(root + "?debug=qa&stage=M03");
 await shot("01-menu");
@@ -48,6 +48,6 @@ await p.evaluate(() =>
   window.__AURORA__.step(3900, { x: -0.1, y: 0, bomb: false, special: false }),
 );
 await shot("04-m01-improved");
-writeFileSync("release/preview-v04.json", JSON.stringify({ errors }, null, 2));
+writeFileSync("release/preview-v05.json", JSON.stringify({ errors }, null, 2));
 console.log({ errors });
 await browser.close();

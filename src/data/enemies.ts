@@ -69,6 +69,16 @@ export const enemies = {
     recover: 3.8,
     damage: 20,
   },
+  E11: {
+    name: "Hidra",
+    hp: 150,
+    r: 1.1,
+    speed: 1.0,
+    score: 500,
+    warning: 1.05,
+    recover: 4.4,
+    damage: 22,
+  },
   E05: {
     name: "Bastilha",
     hp: 80,
@@ -91,3 +101,6 @@ export const enemies = {
   },
 } as const;
 export type EnemyKind = keyof typeof enemies;
+/** Surface/ground targets: Rasante grants +20% against these. */
+export const groundKinds: readonly string[] = ["E05", "E06", "E07", "E11"];
+export const isGround = (k: string) => groundKinds.includes(k);

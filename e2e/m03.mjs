@@ -1,5 +1,5 @@
 import { mkdirSync } from "node:fs";
-mkdirSync("release/screenshots/v0.4", { recursive: true });
+mkdirSync("release/screenshots/v0.5", { recursive: true });
 import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
 import assert from "node:assert/strict";
@@ -229,12 +229,12 @@ const pilot = async (stop = 9999) =>
     };
   }, stop);
 await pilot(242);
-await page.screenshot({ path: "release/screenshots/v0.4/05-m03-posture.png" });
+await page.screenshot({ path: "release/screenshots/v0.5/05-m03-posture.png" });
 await pilot(362);
-await page.screenshot({ path: "release/screenshots/v0.4/06-ciclone.png" });
+await page.screenshot({ path: "release/screenshots/v0.5/06-ciclone.png" });
 const result = await pilot();
 writeFileSync(
-  "release/full-m03-qa-v04.json",
+  "release/full-m03-qa-v05.json",
   JSON.stringify(
     {
       mode: "Accelerated fixed-step, real inputs, damage enabled, no profile rewards",
@@ -279,5 +279,5 @@ assert.equal(result.state.boss.left, 0);
 assert.equal(result.state.boss.right, 0);
 assert.deepEqual(errors, []);
 await page.waitForTimeout(300);
-await page.screenshot({ path: "release/screenshots/v0.4/07-m03-results.png" });
+await page.screenshot({ path: "release/screenshots/v0.5/07-m03-results.png" });
 await browser.close();

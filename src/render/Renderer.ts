@@ -1,4 +1,6 @@
 import { Mountains } from "./Mountains";
+import { Coast } from "./Coast";
+import { isGround } from "../data/enemies";
 import { Atmosphere } from "./Atmosphere";
 import { Presentation } from "./Presentation";
 import { defaults, type Preferences } from "../persistence/Preferences";
@@ -29,6 +31,8 @@ export class Renderer {
   serpent: T.Group;
   canyon: Canyon;
   mountains: Mountains;
+  coast: Coast;
+  bastion: T.Group;
   atmosphere: Atmosphere;
   presentation: Presentation;
   cyclone: T.Group;
@@ -100,6 +104,9 @@ export class Renderer {
     this.mountains = new Mountains((c) => this.material(c));
     this.mountains.visible = false;
     this.scene.add(this.mountains);
+    this.coast = new Coast((c) => this.material(c));
+    this.coast.visible = false;
+    this.scene.add(this.coast);
     this.atmosphere = new Atmosphere();
     this.scene.add(this.atmosphere);
     this.presentation = new Presentation((c) => this.material(c));
@@ -157,7 +164,10 @@ export class Renderer {
     this.cyclone = this.models.cyclone();
     this.cyclone.visible = false;
     this.scene.add(this.cyclone);
-    for (const boss of [this.boss, this.serpent, this.cyclone])
+    this.bastion = this.models.bastion();
+    this.bastion.visible = false;
+    this.scene.add(this.bastion);
+    for (const boss of [this.boss, this.serpent, this.cyclone, this.bastion])
       this.personalize(boss);
     const bg = new T.CircleGeometry(0.19, 10),
       material = new T.MeshBasicMaterial({
@@ -264,11 +274,14 @@ export class Renderer {
     });
     g.userData.flashMaterials = [...clones.values()];
   }
-  flash(g: T.Group, on: boolean) {
+  /** Hit flash. Large hulls use a softer tint so sustained auto-fire never washes the model out. */
+  flash(g: T.Group, on: boolean, strength = 0.85) {
     for (const m of (g.userData.flashMaterials ||
       []) as T.MeshStandardMaterial[]) {
-      m.emissive.setHex(on ? 0xd8eeff : m.userData.emissive);
-      m.emissiveIntensity = on ? 0.85 : 0.35;
+      m.emissive.setHex(
+        on ? (strength < 0.6 ? 0xffc9a0 : 0xd8eeff) : m.userData.emissive,
+      );
+      m.emissiveIntensity = on ? strength : 0.35;
     }
   }
   configure(p: Preferences) {
@@ -397,6 +410,7 @@ export class Renderer {
     this.terrain.visible = id === "M01";
     this.canyon.visible = id === "M02";
     this.mountains.visible = id === "M03";
+    this.coast.visible = id === "M04";
   }
   setMenu(menu: boolean) {
     if (this.menu === menu) return;
@@ -462,17 +476,27 @@ export class Renderer {
     this.terrain.visible = !sky && this.stageId === "M01";
     this.canyon.visible = !sky && this.stageId === "M02";
     this.mountains.visible = !sky && this.stageId === "M03";
-    (this.stageId === "M02"
-      ? this.canyon
-      : this.stageId === "M03"
-        ? this.mountains
-        : this.terrain
-    ).update(
-      world && !this.menu ? world.scroll : this.menuTime * 0.55,
-      this.menuTime,
-      this.quality.level,
-      this.menu ? 28 : this.metrics.worldHeight,
-    );
+    this.coast.visible = !sky && this.stageId === "M04";
+    if (this.stageId === "M04")
+      this.coast.update(
+        world && !this.menu ? world.scroll : this.menuTime * 0.55,
+        this.menuTime,
+        this.quality.level,
+        this.menu ? 28 : this.metrics.worldHeight,
+        world && !this.menu ? world.approach : 0,
+      );
+    else
+      (this.stageId === "M02"
+        ? this.canyon
+        : this.stageId === "M03"
+          ? this.mountains
+          : this.terrain
+      ).update(
+        world && !this.menu ? world.scroll : this.menuTime * 0.55,
+        this.menuTime,
+        this.quality.level,
+        this.menu ? 28 : this.metrics.worldHeight,
+      );
     this.atmosphere.visible = !sky;
     this.atmosphere.update(
       world && !this.menu ? world.scroll : this.menuTime * 0.55,
@@ -497,6 +521,7 @@ export class Renderer {
     this.boss.visible =
       !this.menu && !!world?.boss && !world.boss.cars && !world.boss.kind;
     this.cyclone.visible = !this.menu && world?.boss?.kind === "ciclone";
+    this.bastion.visible = !this.menu && world?.boss?.kind === "bastiao";
     this.serpent.visible = !this.menu && !!world?.boss?.cars;
     if (this.menu) {
       const r = this.previewRect,
@@ -542,7 +567,9 @@ export class Renderer {
             ? this.boss
             : this.stageId === "M02"
               ? this.serpent
-              : this.cyclone;
+              : this.stageId === "M04"
+                ? this.bastion
+                : this.cyclone;
         model.visible = true;
         model.position.set(x, y, 2.5);
         model.scale.setScalar(
@@ -554,7 +581,14 @@ export class Renderer {
             : 1,
         );
         model.rotation.z = Math.sin(this.menuTime * 0.3) * 0.08;
-        if (this.stageId === "M02") {
+        if (this.stageId === "M04") {
+          model.scale.multiplyScalar(0.72);
+          for (let i = 0; i < 3; i++) {
+            const n = model.getObjectByName("cm" + i)!;
+            n.getObjectByName("intact")!.visible = true;
+            n.getObjectByName("wreck")!.visible = false;
+          }
+        } else if (this.stageId === "M02") {
           for (let i = 0; i < 4; i++) {
             const n = model.getObjectByName("car" + i)!;
             n.position.set(-3.6 + i * 2.4, 0, 0);
@@ -573,7 +607,12 @@ export class Renderer {
     }
     if (world && !this.menu) {
       const p = world.player;
-      for (const boss of [this.boss, this.serpent, this.cyclone]) {
+      for (const boss of [
+        this.boss,
+        this.serpent,
+        this.cyclone,
+        this.bastion,
+      ]) {
         boss.scale.setScalar(1);
         boss.rotation.z = 0;
       }
@@ -599,7 +638,42 @@ export class Renderer {
       );
       this.player.visible =
         p.hp > 0 && !(p.invul > 0 && Math.floor(this.menuTime * 12) % 2 === 0);
-      if (world.boss?.kind === "ciclone") {
+      if (world.boss?.kind === "bastiao") {
+        const b = world.boss;
+        this.bastion.position.set(b.x, this.lerp(b.py, b.y, alpha), 2.1);
+        this.bastion.rotation.z = b.dead
+          ? Math.sin(b.deathTime * 13) * 0.015
+          : 0;
+        b.casemates!.forEach((hp, i) => {
+          const n = this.bastion.getObjectByName("cm" + i)!;
+          n.getObjectByName("intact")!.visible = hp > 0;
+          n.getObjectByName("wreck")!.visible = hp <= 0;
+          const gun = n.getObjectByName("gun");
+          if (gun && hp > 0) {
+            const cx = b.x + n.position.x,
+              cy = b.y + n.position.y;
+            gun.rotation.z = -Math.atan2(p.x - cx, -(p.y - cy)) * 0.6;
+          }
+        });
+        const charging = world.lasers.some(
+          (l) => l.owner === -40 && l.age < l.warn + 0.15,
+        );
+        this.bastion
+          .getObjectByName("lens")!
+          .scale.set(
+            2.2,
+            charging ? 1.2 + Math.sin(this.menuTime * 30) * 0.3 : 0.6,
+            1,
+          );
+        this.bastion
+          .getObjectByName("core")!
+          .scale.setScalar(1 + Math.sin(this.menuTime * 6) * 0.025);
+        if (b.hp < this.lastBossHP && b.hp > 0)
+          this.particles.emit(b.x, b.y + 0.9, 8, 0xffffff, 0.9, 0.06);
+        this.lastBossHP = b.hp;
+        this.flash(this.bastion, (b.flash || 0) > 0, 0.32);
+        this.bastion.visible = b.deathTime < 3.2;
+      } else if (world.boss?.kind === "ciclone") {
         const b = world.boss;
         this.cyclone.position.set(b.x, this.lerp(b.py, b.y, alpha), 5.3);
         this.cyclone.rotation.z = b.dead
@@ -742,8 +816,8 @@ export class Renderer {
         }
         const size = b.style === "wide" ? 1.8 : b.style === "mine" ? 1.5 : 1;
         this.dummy.scale.set(
-          b.friendly ? 0.58 : size,
-          b.friendly ? 1.5 : size,
+          b.friendly ? 0.58 : b.style === "torpedo" ? 1.15 : size,
+          b.friendly ? 1.5 : b.style === "torpedo" ? 2.6 : size,
           1,
         );
         if (b.style === "mine") {
@@ -872,9 +946,21 @@ export class Renderer {
       m.position.set(
         this.lerp(e.px, e.x, a),
         this.lerp(e.py, e.y, a),
-        ["E05", "E06", "E07"].includes(e.kind) ? 2.1 : 6,
+        e.kind === "E11" ? 0.9 : isGround(e.kind) ? 2.1 : 6,
       );
-      this.flash(m, e.flash > 0);
+      if (e.kind === "E11") {
+        const wake = m.getObjectByName("wake");
+        if (wake)
+          wake.scale.set(
+            1 + Math.sin(this.menuTime * 5 + e.id) * 0.06,
+            1 + Math.sin(this.menuTime * 3 + e.id) * 0.1,
+            1,
+          );
+        const radar = m.getObjectByName("radar");
+        if (radar) radar.rotation.z = this.menuTime * 3;
+        m.rotation.x = Math.sin(this.menuTime * 1.4 + e.id) * 0.03;
+      }
+      this.flash(m, e.flash > 0, e.kind === "E11" ? 0.4 : 0.85);
       if (e.wings) {
         for (const [i, side] of ["Left", "Right"].entries()) {
           m.getObjectByName("wing" + side)!.visible = e.wings[i] > 0;
@@ -924,6 +1010,25 @@ export class Renderer {
       if (!m) {
         m = new T.Group();
         m.add(this.ring(1.5, C.amber));
+        if (w.stageId === "M04") {
+          // Dock pier with stranded stevedores: planks, pilings, crates and a hand crane.
+          this.box(m, 0, 0, -0.35, 3.2, 2.6, 0.22, 0x6b5440);
+          for (let y = -1.1; y <= 1.1; y += 0.36)
+            this.box(m, 0, y, -0.22, 3.1, 0.05, 0.03, 0x3f3226);
+          for (const x of [-1.5, 1.5])
+            for (const y of [-1.2, 1.2])
+              this.box(m, x, y, -0.7, 0.18, 0.18, 0.8, 0x2e2620);
+          for (const [x, y, c] of [
+            [-1.05, 0.8, 0x8a3d32],
+            [1.05, -0.75, 0x2f5d6b],
+            [1.1, 0.85, 0x9a7b3a],
+          ] as const)
+            this.box(m, x, y, -0.02, 0.55, 0.55, 0.45, c);
+          this.box(m, -1.2, -0.9, 0.35, 0.08, 0.08, 1.1, 0xb5772f);
+          this.box(m, -0.85, -0.9, 0.88, 0.8, 0.08, 0.08, 0xb5772f);
+          for (const x of [-0.35, 0.35])
+            this.box(m, x, 0.45, 0.1, 0.22, 0.22, 0.42, 0xd98a48);
+        }
         if (w.stageId === "M02") {
           this.box(m, 0, 0, -0.2, 2, 1.8, 0.2, 0x695e4b);
           for (const x of [-0.8, 0.8])
@@ -993,6 +1098,41 @@ export class Renderer {
       }
     for (const l of w.lasers) {
       let m = this.laserMeshes.get(l.id);
+      if (!m && l.shape === "circle") {
+        m = new T.Group();
+        const fill = new T.Mesh(
+          new T.CircleGeometry(1, 32),
+          new T.MeshBasicMaterial({
+            color: 0xff6a55,
+            transparent: true,
+            opacity: 0.2,
+            depthWrite: false,
+          }),
+        );
+        fill.name = "fill";
+        m.add(fill, this.ring(1, 0xffb36b, 0.1));
+        const cross = this.ring(0.25, 0xffe0b0, 0.08);
+        m.add(cross);
+        m.renderOrder = 96;
+        this.laserMeshes.set(l.id, m);
+        this.scene.add(m);
+      }
+      if (l.shape === "circle") {
+        const firing = l.age > l.warn + 0.15,
+          k = Math.min(1, l.age / (l.warn + 0.15)),
+          r = l.width / 2;
+        m!.visible = true;
+        m!.position.set(l.x, l.y, 11.4);
+        m!.rotation.z = 0;
+        m!.scale.setScalar(r);
+        const fill = m!.getObjectByName("fill") as T.Mesh;
+        fill.scale.setScalar(firing ? 1 : Math.max(0.05, k));
+        const mat = fill.material as T.MeshBasicMaterial;
+        mat.color.setHex(firing ? 0xffe6c0 : 0xff6a55);
+        mat.opacity = firing ? 0.85 : 0.22 + k * 0.25;
+        continue;
+      }
+      const safe = l.source.includes("pista segura");
       if (!m) {
         m = new T.Group();
         const plane = new T.Mesh(
@@ -1014,10 +1154,23 @@ export class Renderer {
       m.visible = true;
       m.position.set((l.x + l.tx) / 2, (l.y + l.ty) / 2, 11.4);
       m.rotation.z = -Math.atan2(l.tx - l.x, l.ty - l.y);
-      m.scale.set(firing ? l.width : 0.045, len, 1);
+      const wideWarn = l.width > 1;
+      m.scale.set(firing || safe || wideWarn ? l.width : 0.045, len, 1);
       const mat = (m.children[0] as T.Mesh).material as T.MeshBasicMaterial;
-      mat.color.setHex(firing ? 0xffd6ae : 0xff6a55);
-      mat.opacity = firing ? 0.92 : 0.55 + Math.sin(this.menuTime * 22) * 0.25;
+      if (safe) {
+        mat.color.setHex(0x5ff2e4);
+        mat.opacity = 0.16 + Math.sin(this.menuTime * 10) * 0.06;
+        m.position.z = 11.2;
+      } else if (!firing && wideWarn) {
+        mat.color.setHex(0xff5a48);
+        mat.opacity = 0.3 + Math.sin(this.menuTime * 18) * 0.1;
+        m.position.z = 3.6; // under the player ship so the hull stays readable inside the warning
+      } else {
+        mat.color.setHex(firing ? 0xffd6ae : 0xff6a55);
+        mat.opacity = firing
+          ? 0.92
+          : 0.55 + Math.sin(this.menuTime * 22) * 0.25;
+      }
     }
   }
   syncEffects(w: World) {

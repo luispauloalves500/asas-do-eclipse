@@ -40,7 +40,7 @@ export function hangarScreen(save: Save) {
     })
     .join(
       "",
-    )}<p class="economy-note">Primeira vitória: M01 300 · M02 410 · M03 520 + coleta e bônus. Em derrota, mantém 60% da coleta.</p></div></section>`;
+    )}<p class="economy-note">Primeira vitória: M01 300 · M02 410 · M03 520 · M04 640 + coleta e bônus. Em derrota, mantém 60% da coleta.</p></div></section>`;
 }
 export function briefingScreen(save: Save, id: StageId) {
   const info = stageInfo[id],
@@ -49,8 +49,9 @@ export function briefingScreen(save: Save, id: StageId) {
     M01: "Canhões laterais: 200 HP cada. Núcleo: 600 HP. Desarmar as laterais reduz fogo AA. Afaste-se do feixe central.",
     M02: "Três vagões de 200 HP e reator de 900 HP. As juntas douradas recebem dano modular. Minas → jato elétrico → corridas anunciadas.",
     M03: "Rotores: 240 HP cada. Fuselagem: 900 HP. Mísseis guiam por 1,2 s; depois são balísticos. Vento apenas visual no Normal; espirais com brechas.",
+    M04: "Três casamatas de 260 HP protegem o comando de 1100 HP. Cada casamata destruída desliga seus ataques. AA → barragens costeiras SOLO → feixe da plataforma com brecha segura.",
   };
-  return `<section class="briefing-v4"><div class="briefing-copy"><button data-action="map" class="back">← MAPA</button><div class="eyebrow">${id} / ${info.biome}</div><h2>${info.name}</h2><p>${info.intro}</p><div class="briefing-facts"><div><small>Duração</small><b>${info.duration}</b></div><div><small>Aeronave</small><b>${a.name} · Normal</b></div></div><div class="objectives"><div class="eyebrow">Objetivos da operação</div><p>◇ Derrotar ${info.boss}.</p><p>◇ Resgatar ${stages[id].rescues.length} civis · 1,5 s dentro do círculo.</p><p>◇ ${id === "M02" ? "Destruir dois vagões de munição antes da fuga." : id === "M03" ? "Aprender Rasante/Alta e liberar A02 Bóreas." : "Eliminar ≥85% dos alvos para a medalha."}</p></div><div class="briefing-threats"><span class="label">Ameaças identificadas</span><p>${info.risk}</p></div><div class="buttons"><button data-action="start" class="primary">INICIAR VOO ↗</button><button data-action="hangar">PREPARAR NAVE</button></div></div><div class="intel-column"><div class="intel-window"><span class="label">RECONHECIMENTO / MODELO 3D</span></div><div class="boss-intel"><span class="eyebrow">Inteligência do chefe</span><h3>${info.boss.toUpperCase()}</h3><p>${intel[id]}</p><small>Aviso de entrada · transição de até 1,5 s · destruir módulos desliga ataques.</small></div></div></section>`;
+  return `<section class="briefing-v4"><div class="briefing-copy"><button data-action="map" class="back">← MAPA</button><div class="eyebrow">${id} / ${info.biome}</div><h2>${info.name}</h2><p>${info.intro}</p><div class="briefing-facts"><div><small>Duração</small><b>${info.duration}</b></div><div><small>Aeronave</small><b>${a.name} · Normal</b></div></div><div class="objectives"><div class="eyebrow">Objetivos da operação</div><p>◇ Derrotar ${info.boss}.</p><p>◇ Resgatar ${stages[id].rescues.length} civis · 1,5 s dentro do círculo.</p><p>◇ ${id === "M02" ? "Destruir dois vagões de munição antes da fuga." : id === "M03" ? "Aprender Rasante/Alta e liberar A02 Bóreas." : id === "M04" ? "Afundar os navios Hidra antes que escapem: proteger o porto." : "Eliminar ≥85% dos alvos para a medalha."}</p></div><div class="briefing-threats"><span class="label">Ameaças identificadas</span><p>${info.risk}</p></div><div class="buttons"><button data-action="start" class="primary">INICIAR VOO ↗</button><button data-action="hangar">PREPARAR NAVE</button></div></div><div class="intel-column"><div class="intel-window"><span class="label">RECONHECIMENTO / MODELO 3D</span></div><div class="boss-intel"><span class="eyebrow">Inteligência do chefe</span><h3>${info.boss.toUpperCase()}</h3><p>${intel[id]}</p><small>Aviso de entrada · transição de até 1,5 s · destruir módulos desliga ataques.</small></div></div></section>`;
 }
 export function optionsPanel(save: Save, pause = false) {
   const p = preferences(save);
@@ -74,25 +75,31 @@ export function bossHud(w: World) {
   const name = stageInfo[w.stageId].boss.toUpperCase();
   if (b.dead)
     return `<div class="safe-zone"><b>ROTA LIBERADA</b><span>ZONA SEGURA · recolha as peças</span><i style="width:${Math.min(100, (b.deathTime / 3.5) * 100)}%"></i></div>`;
-  const max = w.stageId === "M01" ? 600 : 900,
-    parts = b.cars
-      ? b.cars.map((c, i) => ({
-          label: i === 0 ? "Reator" : "Vagão " + i,
-          hp: c.hp,
-          max: c.maxHp,
+  const max = w.stageId === "M01" ? 600 : w.stageId === "M04" ? 1100 : 900,
+    parts = b.casemates
+      ? b.casemates.map((hp, i) => ({
+          label: ["Casamata O", "Casamata C", "Casamata L"][i],
+          hp,
+          max: 260,
         }))
-      : [
-          {
-            label: w.stageId === "M03" ? "Rotor E" : "Canhão E",
-            hp: b.left,
-            max: w.stageId === "M03" ? 240 : 200,
-          },
-          { label: "Núcleo", hp: b.hp, max },
-          {
-            label: w.stageId === "M03" ? "Rotor D" : "Canhão D",
-            hp: b.right,
-            max: w.stageId === "M03" ? 240 : 200,
-          },
-        ];
-  return `${b.age < 2.7 ? `<div class="boss-alert"><small>ASSINATURA HOSTIL DETECTADA</small><strong>ALERTA</strong><span>${name}</span></div>` : ""}<div class="boss-hud"><div class="boss-name"><b>${name}</b><span class="phase-dots">${[1, 2, 3].map((p) => `<i class="${b.phase === p ? "current" : ""}">${p}</i>`).join("")}</span></div><div class="bar main-boss-bar"><i style="width:${(b.hp / max) * 100}%"></i></div><div class="part-bars">${parts.map((p) => `<span class="${p.hp === 0 ? "destroyed" : ""}">${p.label} · ${Math.ceil(p.hp)}<div class="bar"><i style="width:${(p.hp / p.max) * 100}%"></i></div></span>`).join("")}</div><div class="boss-status">${b.invul > 0 ? "BLINDAGEM EM TRANSIÇÃO · " + b.invul.toFixed(1) + " s" : w.stageId === "M03" && b.phase === 2 ? "VENTO VISUAL · CONTROLES PRESERVADOS" : "PONTOS FRACOS EXPOSTOS"} · FASE ${b.phase}</div></div>`;
+      : b.cars
+        ? b.cars.map((c, i) => ({
+            label: i === 0 ? "Reator" : "Vagão " + i,
+            hp: c.hp,
+            max: c.maxHp,
+          }))
+        : [
+            {
+              label: w.stageId === "M03" ? "Rotor E" : "Canhão E",
+              hp: b.left,
+              max: w.stageId === "M03" ? 240 : 200,
+            },
+            { label: "Núcleo", hp: b.hp, max },
+            {
+              label: w.stageId === "M03" ? "Rotor D" : "Canhão D",
+              hp: b.right,
+              max: w.stageId === "M03" ? 240 : 200,
+            },
+          ];
+  return `${b.age < 2.7 ? `<div class="boss-alert"><small>ASSINATURA HOSTIL DETECTADA</small><strong>ALERTA</strong><span>${name}</span></div>` : ""}<div class="boss-hud"><div class="boss-name"><b>${name}</b><span class="phase-dots">${[1, 2, 3].map((p) => `<i class="${b.phase === p ? "current" : ""}">${p}</i>`).join("")}</span></div><div class="bar main-boss-bar"><i style="width:${(b.hp / max) * 100}%"></i></div><div class="part-bars">${parts.map((p) => `<span class="${p.hp === 0 ? "destroyed" : ""}">${p.label} · ${Math.ceil(p.hp)}<div class="bar"><i style="width:${(p.hp / p.max) * 100}%"></i></div></span>`).join("")}</div><div class="boss-status">${b.invul > 0 ? "BLINDAGEM EM TRANSIÇÃO · " + b.invul.toFixed(1) + " s" : w.stageId === "M03" && b.phase === 2 ? "VENTO VISUAL · CONTROLES PRESERVADOS" : b.casemates && b.phase === 3 ? "FEIXE DA PLATAFORMA · PROCURE A BRECHA" : b.casemates && b.phase === 2 ? "BARRAGEM SOLO · ALTA PASSA POR CIMA" : "PONTOS FRACOS EXPOSTOS"} · FASE ${b.phase}</div></div>`;
 }

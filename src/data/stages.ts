@@ -1,7 +1,11 @@
 import M01 from "./stages/M01.json";
 import M02 from "./stages/M02.json";
 import M03 from "./stages/M03.json";
-export type StageId = "M01" | "M02" | "M03";
+import M04 from "./stages/M04.json";
+export type StageId = "M01" | "M02" | "M03" | "M04";
+export const stageIds: StageId[] = ["M01", "M02", "M03", "M04"];
+export const isStage = (id: unknown): id is StageId =>
+  stageIds.includes(id as StageId);
 export interface Stage {
   id: string;
   title: string;
@@ -13,8 +17,18 @@ export interface Stage {
   repairAtSeconds: number;
   convoys?: { atSeconds: number; laneX: number }[];
 }
-export const stages: Record<StageId, Stage> = { M01, M02, M03 };
+export const stages: Record<StageId, Stage> = { M01, M02, M03, M04 };
 export const stageInfo = {
+  M04: {
+    name: "Costa das Cinzas",
+    boss: "Bastião Delta",
+    biome: "Litoral / porto cinzento",
+    intro:
+      "Retome o porto sob cinzas. Afunde as Hidras, resgate três estivadores nas docas sob fogo de artilharia e derrube as casamatas do Bastião Delta. Algo desperta no farol.",
+    risk: "Hidras com torpedos, baterias costeiras, Arpões e drones",
+    duration: "7–8 minutos",
+    base: 640,
+  },
   M03: {
     name: "Fortaleza do Vento",
     boss: "Ciclone",
@@ -65,7 +79,8 @@ export const actNodes = [
   {
     id: "M04",
     name: "Costa das Cinzas",
-    brief: "Recupere o porto e encontre o primeiro sinal Farol. Em produção.",
+    brief:
+      "Recupere o porto, resgate as docas e encontre o primeiro sinal Farol.",
   },
   {
     id: "M05",

@@ -53,12 +53,12 @@ export function migrate(raw: unknown): Save {
     s.settings.options = normalizePreferences(d.settings.options);
   if (d.campaign?.stages) {
     s.campaign = {
-      lastStage: ["M01", "M02", "M03"].includes(d.campaign.lastStage)
+      lastStage: ["M01", "M02", "M03", "M04"].includes(d.campaign.lastStage)
         ? d.campaign.lastStage
         : "M01",
       stages: {},
     };
-    for (const id of ["M01", "M02", "M03"] as const) {
+    for (const id of ["M01", "M02", "M03", "M04"] as const) {
       const v = d.campaign.stages[id];
       if (v && typeof v === "object")
         s.campaign.stages[id] = {
@@ -79,6 +79,12 @@ export function migrate(raw: unknown): Save {
   }
   if (s.campaign?.lastStage === "M03" && !s.campaign.stages.M02?.cleared)
     s.campaign.lastStage = s.cleared ? "M02" : "M01";
+  if (s.campaign?.lastStage === "M04" && !s.campaign.stages.M03?.cleared)
+    s.campaign.lastStage = s.campaign.stages.M02?.cleared
+      ? "M03"
+      : s.cleared
+        ? "M02"
+        : "M01";
   if (d.aircraft)
     s.aircraft =
       d.aircraft === "A02" && s.campaign?.stages.M03?.cleared ? "A02" : "A01";

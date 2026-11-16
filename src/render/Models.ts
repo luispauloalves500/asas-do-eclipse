@@ -770,6 +770,7 @@ export class Models {
     if (kind === "E03") return this.raptor();
     if (kind === "E07") return this.harpoon();
     if (kind === "E08") return this.seeder();
+    if (kind === "E11") return this.hidra();
     const g = new T.Group();
     if (kind === "E01" || kind === "E02") {
       const wide = kind === "E01" ? 1 : 1.2;
@@ -994,6 +995,215 @@ export class Models {
     this.box(g, P.black, 0, -1.55, 1.15, 1.7, 0.52, 0.3);
     for (let x = -0.65; x < 0.8; x += 0.22)
       this.box(g, P.edge, x, -1.55, 1.35, 0.08, 0.4, 0.07);
+    return this.batch(g);
+  }
+  /** E11 Hidra: surface torpedo boat. Bow faces the player (-y); seven-tube launcher, bridge, funnel, radar and an animated wake. */
+  hidra() {
+    const g = new T.Group();
+    const hull = [
+      [0, -1.95],
+      [0.42, -1.55],
+      [0.78, -0.8],
+      [0.86, 0.6],
+      [0.78, 1.55],
+      [0.5, 1.82],
+      [-0.5, 1.82],
+      [-0.78, 1.55],
+      [-0.86, 0.6],
+      [-0.78, -0.8],
+      [-0.42, -1.55],
+    ];
+    this.plate(g, 0x2c3a40, hull, -0.15, 0.32);
+    this.plate(
+      g,
+      0x5d6e70,
+      hull.map(([x, y]) => [x * 0.86, y * 0.93]),
+      0.24,
+      0.08,
+    );
+    // Red boot-top stripe and deck planking.
+    for (const side of [-1, 1]) {
+      this.box(g, P.red, side * 0.84, 0.2, 0.05, 0.05, 2.6, 0.1, side * 0.02);
+      for (let y = -0.9; y < 1.6; y += 0.42)
+        this.box(g, 0x3f4b4f, side * 0.62, y, 0.36, 0.06, 0.3, 0.05);
+    }
+    for (let y = -1.2; y < 1.7; y += 0.24)
+      this.box(g, 0x73807c, 0, y, 0.34, 1.05, 0.03, 0.02);
+    // Torpedo launcher: seven tubes on a rotating cradle at the bow.
+    const launcher = this.group(g, "launcher", 0, -0.95, 0.42);
+    this.box(launcher, P.black, 0, 0, 0, 1.25, 0.55, 0.22);
+    for (let i = 0; i < 7; i++) {
+      const x = (i - 3) * 0.17;
+      this.cyl(launcher, P.edge, x, -0.12, 0.17, 0.07, 0.62, "y");
+      this.glow(launcher, "tube" + i, x, -0.45, 0.17, P.hot, 0.035);
+    }
+    // Bridge, funnel and radar mast.
+    this.box(g, 0x8c9a95, 0, 0.35, 0.62, 0.95, 0.9, 0.5);
+    this.box(g, P.black, 0, -0.02, 0.8, 0.82, 0.12, 0.18);
+    for (const x of [-0.28, 0, 0.28])
+      this.box(g, 0x69d6d0, x, -0.09, 0.82, 0.18, 0.04, 0.1);
+    this.box(g, 0xa9b4ad, 0, 0.42, 0.98, 0.7, 0.62, 0.18);
+    this.cyl(g, 0x343c41, 0, 1.05, 0.85, 0.24, 0.75);
+    this.cyl(g, P.red, 0, 1.05, 1.25, 0.25, 0.1);
+    this.box(g, P.black, 0, 0.45, 1.5, 0.05, 0.05, 0.9);
+    const radar = this.group(g, "radar", 0, 0.45, 1.85);
+    this.box(radar, P.edge, 0, 0, 0, 0.75, 0.08, 0.12);
+    this.glow(g, "mast", 0, 0.45, 1.98, P.hot, 0.05);
+    // Stern AA mount and life rafts.
+    this.cyl(g, P.black, 0, 1.5, 0.48, 0.25, 0.2);
+    this.cyl(g, P.edge, 0, 1.25, 0.58, 0.05, 0.45, "y");
+    for (const side of [-1, 1])
+      this.cyl(g, 0xd98a48, side * 0.6, 0.95, 0.42, 0.11, 0.38, "y");
+    // Wake: white foam V + stern churn (unlit, animated in Renderer).
+    const wake = this.group(g, "wake", 0, 0, -0.18);
+    const foam = new T.MeshBasicMaterial({
+      color: 0xe8fbf6,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+    });
+    for (const side of [-1, 1]) {
+      const m = new T.Mesh(new T.PlaneGeometry(0.16, 3.2), foam);
+      m.position.set(side * 0.95, 2.6, 0);
+      m.rotation.z = side * 0.32;
+      wake.add(m);
+      const bow = new T.Mesh(new T.PlaneGeometry(0.12, 1.4), foam);
+      bow.position.set(side * 0.62, -1.5, 0);
+      bow.rotation.z = side * -0.55;
+      wake.add(bow);
+    }
+    const churn = new T.Mesh(new T.CircleGeometry(0.62, 14), foam);
+    churn.position.set(0, 2.15, 0);
+    churn.scale.set(1, 1.6, 1);
+    wake.add(churn);
+    return this.batch(g);
+  }
+  /** Bastião Delta: coastal fortress. cm0..cm2 hold intact/wreck states; "core" is the command dome with the platform beam emitter. */
+  bastion() {
+    const g = new T.Group();
+    const stone = 0x5a5d58,
+      concrete = 0x7d827a,
+      rust = 0x8a4b3c;
+    // Sea wall and stepped platform.
+    this.plate(
+      g,
+      0x34393a,
+      [
+        [-6.2, -2.3],
+        [6.2, -2.3],
+        [6.6, -1.2],
+        [6.4, 2.6],
+        [-6.4, 2.6],
+        [-6.6, -1.2],
+      ],
+      -0.4,
+      0.5,
+    );
+    this.plate(
+      g,
+      stone,
+      [
+        [-5.7, -1.9],
+        [5.7, -1.9],
+        [6, 2.3],
+        [-6, 2.3],
+      ],
+      0.1,
+      0.35,
+    );
+    this.plate(
+      g,
+      concrete,
+      [
+        [-2.6, -0.4],
+        [2.6, -0.4],
+        [3, 2.2],
+        [-3, 2.2],
+      ],
+      0.48,
+      0.3,
+    );
+    for (let x = -5.6; x <= 5.6; x += 0.7) {
+      this.box(g, 0x2a2f31, x, -2.25, 0.12, 0.08, 0.15, 0.55);
+      this.box(g, concrete, x + 0.35, -1.95, 0.5, 0.32, 0.18, 0.18);
+    }
+    for (const side of [-1, 1]) {
+      // Corner bastions and fuel tanks.
+      this.cyl(g, stone, side * 5.7, 1.9, 0.5, 0.75, 0.9);
+      this.cyl(g, concrete, side * 5.7, 1.9, 1.0, 0.6, 0.12);
+      this.glow(g, "corner" + side, side * 5.7, 1.9, 1.15, P.hot, 0.08);
+      for (const y of [0.6, 1.4])
+        this.cyl(g, 0x6f6a5a, side * 2.1, y, 0.95, 0.32, 0.5);
+      // Ammo rails from casemates to the core.
+      this.box(g, rust, side * 2.1, -0.1, 0.5, 2.6, 0.12, 0.06, side * -0.15);
+      // Radio masts.
+      this.box(g, P.black, side * 3.4, 1.9, 1.5, 0.06, 0.06, 2.2);
+      this.box(g, P.edge, side * 3.4, 1.9, 2.4, 0.7, 0.04, 0.04);
+      this.glow(g, "mast" + side, side * 3.4, 1.9, 2.62, P.hot, 0.06);
+    }
+    // Three casemates.
+    const spots = [
+      [-4.2, -0.5],
+      [0, -1.7],
+      [4.2, -0.5],
+    ];
+    spots.forEach(([x, y], i) => {
+      const node = this.group(g, "cm" + i, x, y, 0.45);
+      const intact = this.group(node, "intact");
+      this.cyl(intact, stone, 0, 0, 0.25, 1.05, 0.55);
+      this.cyl(intact, concrete, 0, 0, 0.58, 0.9, 0.18);
+      this.box(intact, P.black, 0, -0.62, 0.55, 1.2, 0.22, 0.18);
+      const turret = this.group(intact, "gun");
+      this.cyl(turret, P.red, 0, 0, 0.82, 0.62, 0.36);
+      this.box(turret, 0xb35b55, 0, 0.1, 1.05, 0.8, 0.7, 0.16);
+      const barrels = i === 1 ? [-0.3, -0.1, 0.1, 0.3] : [-0.18, 0.18];
+      for (const bx of barrels) {
+        this.cyl(turret, P.black, bx, -0.72, 0.92, 0.07, 1.05, "y");
+        this.cyl(turret, P.edge, bx, -1.22, 0.92, 0.1, 0.16, "y");
+      }
+      this.glow(turret, "sight", 0, -0.25, 1.17, P.hot, 0.09);
+      const wreck = this.group(node, "wreck");
+      this.cyl(wreck, 0x2b2d2c, 0, 0, 0.2, 1.0, 0.4);
+      for (let k = 0; k < 5; k++) {
+        const a = k * 1.26;
+        this.box(
+          wreck,
+          k % 2 ? stone : P.black,
+          Math.cos(a) * 0.5,
+          Math.sin(a) * 0.5,
+          0.5,
+          0.45,
+          0.3,
+          0.25,
+          a,
+        );
+      }
+      this.glow(wreck, "ember", 0, 0, 0.6, 0xff6b35, 0.22);
+      wreck.visible = false;
+    });
+    // Command dome: the core, raised above the centre casemate.
+    const core = this.group(g, "core", 0, 0.9, 0.78);
+    this.cyl(core, P.black, 0, 0, 0.25, 1.25, 0.5);
+    this.ball(core, 0x47524f, 0, 0, 0.6, 1.05, 1.05, 0.55);
+    this.cyl(core, P.plate, 0, 0, 0.95, 0.7, 0.18);
+    this.glow(core, "reactor", 0, 0, 1.1, P.hot, 0.32);
+    for (let k = 0; k < 6; k++) {
+      const a = (k * Math.PI) / 3;
+      this.box(
+        core,
+        P.edge,
+        Math.cos(a) * 1.1,
+        Math.sin(a) * 1.1,
+        0.7,
+        0.2,
+        0.3,
+        0.35,
+        a,
+      );
+    }
+    // Platform beam emitter lens (bright when the beam is charging).
+    const lens = this.glow(core, "lens", 0, -0.95, 0.8, 0xff7a55, 0.2);
+    lens.scale.set(2.2, 0.6, 1);
     return this.batch(g);
   }
 }

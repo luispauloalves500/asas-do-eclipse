@@ -14,7 +14,9 @@ export interface Bullet {
   source: string;
   life: number;
   arm: number;
-  style: "round" | "wide" | "mine" | "missile";
+  style: "round" | "wide" | "mine" | "missile" | "torpedo";
+  /** Torpedoes steer to this lane x, then run straight. NaN = none. */
+  laneX: number;
   owner: number;
   hazard: "universal" | "ground_only";
   homing: number;
@@ -42,6 +44,7 @@ export class BulletPool {
     hazard: "universal",
     homing: 0,
     dodged: false,
+    laneX: NaN,
   }));
   spawn(
     x: number,
@@ -75,6 +78,7 @@ export class BulletPool {
       hazard: "universal",
       homing: 0,
       dodged: false,
+      laneX: NaN,
     });
     return b;
   }
