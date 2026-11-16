@@ -1,0 +1,169 @@
+{
+  "mode": "Accelerated fixed-step, real inputs, damage enabled, no profile rewards",
+  "errors": [],
+  "steps": 7898,
+  "patterns": [
+    "mísseis guiados",
+    "mísseis balísticos",
+    "vento lateral",
+    "espiral dupla"
+  ],
+  "minHP": 100,
+  "phases": [
+    1,
+    2,
+    3
+  ],
+  "enemies": [
+    "E03",
+    "E04",
+    "E06",
+    "E10"
+  ],
+  "repairSeen": true,
+  "postures": [
+    "rasante",
+    "alta"
+  ],
+  "state": {
+    "screen": "game",
+    "selectedStage": "M03",
+    "stageId": "M03",
+    "ammoDestroyed": 0,
+    "convoys": [],
+    "paused": true,
+    "state": "victory",
+    "time": 392.8499999999714,
+    "player": {
+      "id": 0,
+      "x": 0.1034171503538543,
+      "y": -8.04240280603355,
+      "px": 0.1034171503538543,
+      "py": -8.04240280603355,
+      "vx": 0,
+      "vy": 0,
+      "r": 0.33,
+      "hp": 100,
+      "maxHp": 100,
+      "invul": 995.4833333333365,
+      "fire": -0.05,
+      "bombs": 2,
+      "specials": 0,
+      "beam": 0,
+      "posture": "alta",
+      "targetPosture": "alta",
+      "transition": 0,
+      "postureCooldown": 0,
+      "altitude": 1,
+      "dodgeBoost": 0,
+      "dodgeCooldown": 0
+    },
+    "boss": {
+      "kind": "ciclone",
+      "x": -0.5986719832739446,
+      "y": 6.8,
+      "py": 6.8,
+      "hp": 0,
+      "left": 0,
+      "right": 0,
+      "phase": 3,
+      "invul": 0,
+      "age": 42.866666666665516,
+      "cycle": 3.266666666666672,
+      "dead": true,
+      "deathTime": 3.516666666666659,
+      "attackIndex": 8,
+      "wind": 0,
+      "spiralShots": 1,
+      "spiralClock": 0.22000000000000003,
+      "flash": 0.085
+    },
+    "enemies": [],
+    "rescues": [
+      {
+        "id": 66,
+        "x": -5.4,
+        "y": 6.771999999999969,
+        "px": -5.4,
+        "py": 6.783999999999969,
+        "progress": 1,
+        "active": false,
+        "age": 4.483333333333323,
+        "rescued": true
+      },
+      {
+        "id": 94,
+        "x": 5.4,
+        "y": 6.867999999999966,
+        "px": 5.4,
+        "py": 6.879999999999965,
+        "progress": 1,
+        "active": false,
+        "age": 4.34999999999999,
+        "rescued": true
+      }
+    ],
+    "bullets": [],
+    "pickups": [],
+    "lasers": [],
+    "score": 17037,
+    "shots": 2358,
+    "hits": 142,
+    "damageTaken": 0,
+    "scrap": 80,
+    "lastDamage": "",
+    "escaped": 19,
+    "hidra": {
+      "spawned": 0,
+      "sunk": 0
+    },
+    "shellsFired": 0,
+    "approach": 0,
+    "drawCalls": 85,
+    "memory": {
+      "geometries": 100,
+      "textures": 1
+    },
+    "visual": {
+      "version": "0.5.0",
+      "quality": 1,
+      "viewport": {
+        "scale": 32.142857142857146,
+        "fieldWidth": 514.2857142857143,
+        "fieldHeight": 900.0000000000001,
+        "worldWidth": 49.77777777777777,
+        "worldHeight": 27.999999999999996
+      }
+    },
+    "save": {
+      "schemaVersion": 2,
+      "scrap": 0,
+      "upgrades": {
+        "motor": 0,
+        "canhao": 0,
+        "ima": 0
+      },
+      "cleared": false,
+      "bestScore": 0,
+      "medals": [],
+      "settings": {
+        "sound": true
+      },
+      "attempts": 0
+    },
+    "loops": 0,
+    "music": {
+      "stage": "M03",
+      "mode": "menu",
+      "buses": 2
+    },
+    "options": {
+      "music": 0.65,
+      "effects": 0.8,
+      "autoFire": true,
+      "showHitbox": true,
+      "vibration": false,
+      "quality": "auto"
+    }
+  }
+}

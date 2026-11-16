@@ -1,0 +1,99 @@
+{
+  "version": "0.5.0",
+  "verified_at_local": "2026-11-16T08:22:17 America/Sao_Paulo",
+  "unit_tests": 74,
+  "playthroughs": {
+    "M01": {
+      "state": "victory",
+      "seconds": 356.0000000000049,
+      "hp": 100,
+      "rescued": 3,
+      "phases": [
+        1,
+        2,
+        3
+      ],
+      "errors": []
+    },
+    "M02": {
+      "state": "victory",
+      "seconds": 387.8666666666426,
+      "hp": 100,
+      "rescued": 3,
+      "phases": [
+        1,
+        2,
+        3
+      ],
+      "errors": []
+    },
+    "M03": {
+      "state": "victory",
+      "seconds": 392.8499999999714,
+      "hp": 100,
+      "rescued": 2,
+      "phases": [
+        1,
+        2,
+        3
+      ],
+      "errors": []
+    },
+    "M04": {
+      "state": "victory",
+      "seconds": 448.39999999992085,
+      "hp": 100,
+      "rescued": 3,
+      "phases": [
+        1,
+        2,
+        3
+      ],
+      "errors": []
+    }
+  },
+  "m04": {
+    "patterns": [
+      "pista segura",
+      "torpedos de superfície",
+      "obus sob fogo",
+      "torres AA",
+      "barragem costeira",
+      "raio da plataforma"
+    ],
+    "enemies": [
+      "E01",
+      "E05",
+      "E06",
+      "E07",
+      "E11"
+    ],
+    "casemates": [
+      0,
+      0,
+      0
+    ],
+    "hidra": {
+      "spawned": 6,
+      "sunk": 6
+    },
+    "escaped": 8,
+    "shellsFired": 3,
+    "maxApproach": 1
+  },
+  "browser_checks": {
+    "smoke": 13,
+    "campaign": 8,
+    "features": 6
+  },
+  "artifacts": {
+    "release/asas-do-eclipse-m01.html": {
+      "bytes": 754386,
+      "sha256": "a39d8226f302d6653614266a63177fa04670765f877905f82f6d394d7240117a"
+    },
+    "release/asas-do-eclipse-dist.zip": {
+      "bytes": 202111,
+      "sha256": "6dc27fd3c0e9c13e0014c1aee39874ce904ac3ea5ce39efe36cfc07d36265ce8"
+    }
+  }
+}

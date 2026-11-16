@@ -1,0 +1,47 @@
+{
+  "mode": "Accelerated fixed-step, real inputs, damage enabled, no profile rewards",
+  "browser": "158.0.8127.18",
+  "errors": [],
+  "state": "victory",
+  "time": 448.39999999992085,
+  "hp": 100,
+  "rescued": 3,
+  "phases": [
+    1,
+    2,
+    3
+  ],
+  "patterns": [
+    "pista segura",
+    "torpedos de superfície",
+    "obus sob fogo",
+    "torres AA",
+    "barragem costeira",
+    "raio da plataforma"
+  ],
+  "enemies": [
+    "E01",
+    "E05",
+    "E06",
+    "E07",
+    "E11"
+  ],
+  "casemates": [
+    0,
+    0,
+    0
+  ],
+  "escaped": 8,
+  "hidra": {
+    "spawned": 6,
+    "sunk": 6
+  },
+  "shellsFired": 3,
+  "maxApproach": 1,
+  "minHP": 100,
+  "postures": [
+    "rasante",
+    "alta"
+  ],
+  "steps": 9031
+}
